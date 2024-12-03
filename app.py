@@ -5,7 +5,6 @@ import os
 
 app = Flask(__name__)
 
-# Azure SQL Database connection with managed identity
 def get_connection_string():
     server = "trafficscrash-server.database.windows.net"
     database = "TrafficCrashDB"
@@ -18,12 +17,10 @@ engine = create_engine(f"mssql+pyodbc:///?odbc_connect={connection_string}")
 @app.route("/")
 def index():
     try:
-        # Fetch data from the database
         with engine.connect() as connection:
-            result = connection.execute("SELECT TOP 10 * FROM dbo.CrashData")
+            query = text("SELECT TOP 10 * FROM dbo.CrashData")
+            result = connection.execute(query)
             rows = [dict(row) for row in result]
-
-        # Render data in the HTML template
         return render_template("index.html", data=rows)
     except Exception as e:
         return f"Error: {e}"
