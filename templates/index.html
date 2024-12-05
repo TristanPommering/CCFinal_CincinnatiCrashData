@@ -25,6 +25,10 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 console.log("Data fetched from API:", url, data); // Log for debugging
+                if (data.error) {
+                    console.error("API Error:", data.error);
+                    return [];
+                }
                 return data;
             } catch (error) {
                 console.error("Error fetching data from API:", url, error);

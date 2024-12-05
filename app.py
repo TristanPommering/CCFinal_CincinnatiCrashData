@@ -1,8 +1,12 @@
 from flask import Flask, render_template, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+import logging
 
 app = Flask(__name__)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
 # Database connection
 def get_connection_string():
@@ -34,7 +38,8 @@ def crashes_by_vehicle_type():
             data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error fetching vehicle type data: {e}")
+        return jsonify({"error": "Failed to fetch data from the database."}), 500
 
 # Endpoint: Crashes by Gender
 @app.route("/data/gender", methods=["GET"])
@@ -52,7 +57,8 @@ def crashes_by_gender():
             data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error fetching gender data: {e}")
+        return jsonify({"error": "Failed to fetch data from the database."}), 500
 
 # Endpoint: Crashes by Light Conditions (Day vs Night)
 @app.route("/data/light-conditions", methods=["GET"])
@@ -78,7 +84,8 @@ def crashes_by_light_conditions():
             data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error fetching light condition data: {e}")
+        return jsonify({"error": "Failed to fetch data from the database."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
