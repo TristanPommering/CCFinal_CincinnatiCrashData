@@ -25,24 +25,37 @@ def get_crash_data():
 
     try:
         with engine.connect() as connection:
-            # Base query to get crashes grouped by month
+            # Base query to get crashes grouped by month (1-12)
             query = """
                 SELECT 
-                    FORMAT([CRASHDATE], 'yyyy-MM') AS CrashMonth,
+                    MONTH([CRASHDATE]) AS CrashMonth, -- Numeric month
                     COUNT(*) AS CrashCount
                 FROM [dbo].[CrashData]
+                WHERE (:unit_type IS NULL OR [UNITTYPE] = :unit_type) -- Optional filter
+                GROUP BY MONTH([CRASHDATE])
+                ORDER BY CrashMonth
             """
-            # Add WHERE clause if UNITTYPE is specified
-            if unit_type:
-                query += " WHERE [UNITTYPE] = :unit_type"
-            query += " GROUP BY FORMAT([CRASHDATE], 'yyyy-MM') ORDER BY CrashMonth"
 
-            result = connection.execute(text(query), {"unit_type": unit_type} if unit_type else {})
+            result = connection.execute(
+                text(query), {"unit_type": unit_type} if unit_type else {}
+            )
 
             # Format rows as dictionaries with proper keys
             crash_data = [{"month": row["CrashMonth"], "count": row["CrashCount"]} for row in result]
 
         return jsonify(crash_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/vehicle-types", methods=["GET"])
+def get_vehicle_types():
+    # Fetch distinct UNITTYPE values
+    try:
+        with engine.connect() as connection:
+            query = "SELECT DISTINCT [UNITTYPE] FROM [dbo].[CrashData] ORDER BY [UNITTYPE]"
+            result = connection.execute(text(query))
+            vehicle_types = [row["UNITTYPE"] for row in result]
+        return jsonify(vehicle_types)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
