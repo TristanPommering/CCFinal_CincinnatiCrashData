@@ -5,18 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Data Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: row; /* Layout: Left for charts, right for future content */
+        }
+        #charts-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between charts */
+        }
+        canvas {
+            width: 300px !important; /* Reduce chart size */
+            height: 300px !important; /* Reduce chart size */
+            margin: 0 auto; /* Center charts in their containers */
+        }
+        #content-container {
+            flex: 2;
+            margin-left: 20px; /* Space between left and right sections */
+        }
+    </style>
 </head>
 <body>
-    <h1>Crash Data Dashboard</h1>
+    <div id="charts-container">
+        <h2>Crashes by Vehicle Type</h2>
+        <canvas id="vehicleTypeChart"></canvas>
 
-    <h2>Crashes by Vehicle Type</h2>
-    <canvas id="vehicleTypeChart" width="400" height="400"></canvas>
+        <h2>Crashes by Gender</h2>
+        <canvas id="genderChart"></canvas>
 
-    <h2>Crashes by Gender</h2>
-    <canvas id="genderChart" width="400" height="400"></canvas>
-
-    <h2>Crashes by Light Conditions</h2>
-    <canvas id="lightConditionChart" width="400" height="400"></canvas>
+        <h2>Crashes by Light Conditions</h2>
+        <canvas id="lightConditionChart"></canvas>
+    </div>
+    <div id="content-container">
+        <h2>Future Chart or Content</h2>
+        <p>This section is reserved for additional charts or other content you may want to add later.</p>
+    </div>
 
     <script>
         // Function to fetch data from API
