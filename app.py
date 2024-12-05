@@ -45,6 +45,7 @@ def get_crash_data():
 
         return jsonify(crash_data)
     except Exception as e:
+        app.logger.error(f"Error fetching crash data: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/vehicle-types", methods=["GET"])
@@ -56,8 +57,8 @@ def get_vehicle_types():
             vehicle_types = [row["VEHICLETYPE"] for row in result]
         return jsonify(vehicle_types)
     except Exception as e:
+        app.logger.error(f"Error fetching vehicle types: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
