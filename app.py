@@ -47,9 +47,9 @@ def get_crash_data():
 def get_vehicle_types():
     try:
         with engine.connect() as connection:
-            query = "SELECT DISTINCT [VEHICLETYPE] FROM [dbo].[CrashData] ORDER BY [VEHICLETYPE];"
+            query = "SELECT DISTINCT [VEHICLETYPE] FROM [dbo].[CrashData] WHERE VEHICLETYPE IS NOT NULL ORDER BY [VEHICLETYPE];"
             result = connection.execute(text(query))
-            vehicle_types = [row["VEHICLETYPE"] for row in result if row["VEHICLETYPE"]]  # Filter nulls
+            vehicle_types = [row["VEHICLETYPE"] for row in result]  # Extract and list vehicle types
         return jsonify(vehicle_types)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
