@@ -1,116 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crash Data Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        #filter {
-            margin-bottom: 20px;
-        }
-        #vehicleType {
-            padding: 8px;
-            font-size: 14px;
-        }
-        canvas {
-            max-width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <h1>Crash Data Dashboard</h1>
+// Fetch and populate the vehicle types dropdown
+async function fetchVehicleTypes() {
+    try {
+        const response = await fetch('/vehicle-types');
+        const vehicleTypes = await response.json();
 
-    <!-- Dropdown for VEHICLETYPE -->
-    <div id="filter">
-        <label for="vehicleType">Filter by Vehicle Type:</label>
-        <select id="vehicleType">
-            <option value="">All</option>
-        </select>
-    </div>
-
-    <!-- Bar Chart -->
-    <canvas id="crashChart" width="400" height="200"></canvas>
-
-    <script>
-        const ctx = document.getElementById('crashChart').getContext('2d');
-        let crashChart;
-
-        // Function to fetch and populate the vehicle types dropdown
-        async function fetchVehicleTypes() {
-            try {
-                const response = await fetch('/vehicle-types');
-                const vehicleTypes = await response.json();
-
-                const dropdown = document.getElementById('vehicleType');
-                vehicleTypes.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    dropdown.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Error fetching vehicle types:", error);
-            }
+        if (vehicleTypes.length === 0) {
+            console.error("No vehicle types found.");
+            alert("No vehicle types available in the database.");
         }
 
-        // Function to fetch crash data and update the chart
-        async function fetchCrashData(vehicleType = "") {
-            try {
-                const response = await fetch(`/crash-data?vehicle_type=${vehicleType}`);
-                const data = await response.json();
-
-                if (crashChart) crashChart.destroy();
-
-                // Prepare data for Chart.js
-                const labels = Array.from({ length: 12 }, (_, i) => i + 1); // Months 1-12
-                const counts = Array(12).fill(0);
-
-                data.forEach(d => {
-                    counts[d.month - 1] = d.count;
-                });
-
-                crashChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels.map(month => `Month ${month}`),
-                        datasets: [{
-                            label: 'Number of Crashes',
-                            data: counts,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error("Error fetching crash data:", error);
-            }
-        }
-
-        // Fetch vehicle types and populate dropdown on page load
-        fetchVehicleTypes();
-
-        // Fetch initial crash data (all vehicle types) on page load
-        fetchCrashData();
-
-        // Update chart when dropdown value changes
-        document.getElementById('vehicleType').addEventListener('change', (e) => {
-            const vehicleType = e.target.value;
-            fetchCrashData(vehicleType);
+        const dropdown = document.getElementById('vehicleType');
+        vehicleTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            dropdown.appendChild(option);
         });
-    </script>
-</body>
-</html>
+        console.log("Vehicle types loaded:", vehicleTypes);
+    } catch (error) {
+        console.error("Error fetching vehicle types:", error);
+    }
+}
+
+// Fetch crash data and update the chart
+async function fetchCrashData(vehicleType = "") {
+    try {
+        const response = await fetch(`/crash-data?vehicle_type=${vehicleType}`);
+        const data = await response.json();
+
+        if (data.length === 0) {
+            console.error("No crash data found.");
+            alert("No crash data available for the selected vehicle type.");
+        }
+
+        if (crashChart) crashChart.destroy();
+
+        const labels = Array.from({ length: 12 }, (_, i) => i + 1); // Months 1-12
+        const counts = Array(12).fill(0);
+
+        data.forEach(d => {
+            counts[d.month - 1] = d.count;
+        });
+
+        crashChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.map(month => `Month ${month}`),
+                datasets: [{
+                    label: 'Number of Crashes',
+                    data: counts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        console.log("Crash data loaded:", data);
+    } catch (error) {
+        console.error("Error fetching crash data:", error);
+    }
+}
+
+// Initialize the dropdown and chart
+fetchVehicleTypes();
+fetchCrashData();
+
+// Update the chart when the dropdown value changes
+document.getElementById('vehicleType').addEventListener('change', (e) => {
+    const vehicleType = e.target.value;
+    fetchCrashData(vehicleType);
+});
