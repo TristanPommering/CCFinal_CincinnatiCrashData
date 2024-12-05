@@ -4,54 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Data Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-        #filter {
-            margin-bottom: 20px;
-        }
-        #vehicleType {
-            padding: 8px;
-            font-size: 14px;
+        .chart-container {
+            width: 50%;
+            margin: 20px auto;
         }
     </style>
 </head>
 <body>
     <h1>Crash Data Dashboard</h1>
 
-    <!-- Dropdown for VEHICLETYPE -->
-    <div id="filter">
-        <label for="vehicleType">Filter by Vehicle Type:</label>
-        <select id="vehicleType">
-            <option value="">All</option>
-        </select>
+    <div class="chart-container">
+        <h2>Crashes by Vehicle Type</h2>
+        <canvas id="vehicleTypeChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Crashes by Gender</h2>
+        <canvas id="genderChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Crashes by Light Conditions</h2>
+        <canvas id="lightConditionChart"></canvas>
     </div>
 
     <script>
-        // Fetch and populate the vehicle types dropdown
-        async function fetchVehicleTypes() {
-            try {
-                const response = await fetch('/vehicle-types');
-                const vehicleTypes = await response.json();
-
-                const dropdown = document.getElementById('vehicleType');
-                vehicleTypes.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    dropdown.appendChild(option);
-                });
-
-                console.log("Vehicle types loaded:", vehicleTypes); // Debug log
-            } catch (error) {
-                console.error("Error fetching vehicle types:", error);
-            }
+        async function fetchData(endpoint) {
+            const response = await fetch(endpoint);
+            return response.json();
         }
 
-        // Initialize the dropdown
-        fetchVehicleTypes();
+        function createPieChart(canvasId, chartData, chartLabel) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const labels = chartData.map(data => data.label);
+            const values = chartData.map(data => data.value);
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: chartLabel,
+                        data: values,
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(192, 75, 75, 0.6)',
+                            'rgba(75, 75, 192, 0.6)',
+                            'rgba(192, 192, 75, 0.6)',
+                            'rgba(75, 192, 75, 0.6)'
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        // Fetch and render the charts
+        fetchData('/crash-data/vehicle-type').then(data => createPieChart('vehicleTypeChart', data, 'Vehicle Type'));
+        fetchData('/crash-data/gender').then(data => createPieChart('genderChart', data, 'Gender'));
+        fetchData('/crash-data/light-conditions').then(data => createPieChart('lightConditionChart', data, 'Light Conditions'));
     </script>
 </body>
 </html>

@@ -1,7 +1,6 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-import pyodbc
 
 app = Flask(__name__)
 
@@ -18,41 +17,67 @@ engine = create_engine(f"mssql+pyodbc:///?odbc_connect={connection_string}")
 def index():
     return render_template("index.html")
 
-@app.route("/crash-data", methods=["GET"])
-def get_crash_data():
-    vehicle_type = request.args.get("vehicle_type", None)
+@app.route("/crash-data/vehicle-type", methods=["GET"])
+def get_crash_data_vehicle_type():
+    try:
+        with engine.connect() as connection:
+            query = """
+                SELECT VEHICLETYPE, COUNT(*) AS CrashCount
+                FROM [dbo].[CrashData]
+                WHERE VEHICLETYPE IS NOT NULL
+                GROUP BY VEHICLETYPE
+                ORDER BY CrashCount DESC;
+            """
+            result = connection.execute(text(query))
+            data = [{"label": row["VEHICLETYPE"], "value": row["CrashCount"]} for row in result]
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/crash-data/gender", methods=["GET"])
+def get_crash_data_gender():
+    try:
+        with engine.connect() as connection:
+            query = """
+                SELECT GENDER, COUNT(*) AS CrashCount
+                FROM [dbo].[CrashData]
+                WHERE GENDER IS NOT NULL
+                GROUP BY GENDER
+                ORDER BY CrashCount DESC;
+            """
+            result = connection.execute(text(query))
+            data = [{"label": row["GENDER"], "value": row["CrashCount"]} for row in result]
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/crash-data/light-conditions", methods=["GET"])
+def get_crash_data_light_conditions():
     try:
         with engine.connect() as connection:
             query = """
                 SELECT 
-                    INTEGERMONTH AS CrashMonth,
+                    CASE 
+                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%DAY%' THEN 'Day'
+                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%NIGHT%' THEN 'Night'
+                        ELSE 'Other'
+                    END AS LightCondition,
                     COUNT(*) AS CrashCount
                 FROM [dbo].[CrashData]
-                WHERE (:vehicle_type IS NULL OR VEHICLETYPE = :vehicle_type)
-                GROUP BY INTEGERMONTH
-                ORDER BY INTEGERMONTH;
+                WHERE LIGHTCONDITIONSPRIMARY IS NOT NULL
+                GROUP BY 
+                    CASE 
+                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%DAY%' THEN 'Day'
+                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%NIGHT%' THEN 'Night'
+                        ELSE 'Other'
+                    END
+                ORDER BY CrashCount DESC;
             """
-            # Corrected parameter handling
-            params = {"vehicle_type": vehicle_type} if vehicle_type else {"vehicle_type": None}
-            result = connection.execute(text(query), params)
-
-            # Format rows as dictionaries with proper keys
-            crash_data = [{"month": row["CrashMonth"], "count": row["CrashCount"]} for row in result]
-
-        return jsonify(crash_data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/vehicle-types", methods=["GET"])
-def get_vehicle_types():
-    try:
-        with engine.connect() as connection:
-            query = "SELECT DISTINCT [VEHICLETYPE] FROM [dbo].[CrashData] WHERE VEHICLETYPE IS NOT NULL ORDER BY [VEHICLETYPE];"
             result = connection.execute(text(query))
-            vehicle_types = [row["VEHICLETYPE"] for row in result]  # Extract and list vehicle types
-        return jsonify(vehicle_types)
+            data = [{"label": row["LightCondition"], "value": row["CrashCount"]} for row in result]
+        return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=False)  # Disable debugging for production
+    app.run(debug=True)
