@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         table {
             width: 100%;
@@ -19,39 +20,79 @@
         th {
             background-color: #f2f2f2;
         }
+        #filter {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <h1>Crash Data</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Address</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Age</th>
-                <th>Community</th>
-                <th>Crash Date</th>
-                <th>Severity</th>
-                <th>Gender</th>
-                <th>Injuries</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in data %}
-            <tr>
-                <td>{{ row["ADDRESS_X"] }}</td>
-                <td>{{ row["LATITUDE_X"] }}</td>
-                <td>{{ row["LONGITUDE_X"] }}</td>
-                <td>{{ row["AGE"] }}</td>
-                <td>{{ row["COMMUNITY_COUNCIL_NEIGHBORHOOD"] }}</td>
-                <td>{{ row["CRASHDATE"] }}</td>
-                <td>{{ row["CRASHSEVERITY"] }}</td>
-                <td>{{ row["GENDER"] }}</td>
-                <td>{{ row["INJURIES"] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <!-- Dropdown for UNITTYPE -->
+    <div id="filter">
+        <label for="unitType">Filter by Vehicle Type:</label>
+        <select id="unitType">
+            <option value="">All</option>
+            <option value="01 - PASSENGER CAR">Passenger Car</option>
+            <option value="02 - TRUCK">Truck</option>
+            <!-- Add more options as needed -->
+        </select>
+    </div>
+
+    <!-- Bar Chart -->
+    <canvas id="crashChart" width="400" height="200"></canvas>
+
+    <script>
+        const ctx = document.getElementById('crashChart').getContext('2d');
+        let crashChart;
+
+        // Function to fetch and update chart data
+        async function fetchCrashData(unitType = "") {
+            try {
+                const response = await fetch(`/crash-data?unit_type=${unitType}`);
+                const data = await response.json();
+
+                if (crashChart) crashChart.destroy();
+
+                // Prepare data for Chart.js
+                const labels = data.map(d => d.month);
+                const counts = data.map(d => d.count);
+
+                // Create chart
+                crashChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Number of Crashes',
+                            data: counts,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching crash data:", error);
+            }
+        }
+
+        // Fetch initial data
+        fetchCrashData();
+
+        // Update chart when dropdown value changes
+        document.getElementById('unitType').addEventListener('change', (e) => {
+            const unitType = e.target.value;
+            fetchCrashData(unitType);
+        });
+    </script>
 </body>
 </html>
