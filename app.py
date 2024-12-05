@@ -4,6 +4,7 @@ from sqlalchemy.sql import text
 
 app = Flask(__name__)
 
+# Database connection
 def get_connection_string():
     server = "trafficscrash-server.database.windows.net"
     database = "TrafficCrashDB"
@@ -17,8 +18,9 @@ engine = create_engine(f"mssql+pyodbc:///?odbc_connect={connection_string}")
 def index():
     return render_template("index.html")
 
-@app.route("/crash-data/vehicle-type", methods=["GET"])
-def get_crash_data_vehicle_type():
+# Endpoint: Crashes by Vehicle Type
+@app.route("/data/vehicle-type", methods=["GET"])
+def crashes_by_vehicle_type():
     try:
         with engine.connect() as connection:
             query = """
@@ -34,8 +36,9 @@ def get_crash_data_vehicle_type():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/crash-data/gender", methods=["GET"])
-def get_crash_data_gender():
+# Endpoint: Crashes by Gender
+@app.route("/data/gender", methods=["GET"])
+def crashes_by_gender():
     try:
         with engine.connect() as connection:
             query = """
@@ -51,27 +54,25 @@ def get_crash_data_gender():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/crash-data/light-conditions", methods=["GET"])
-def get_crash_data_light_conditions():
+# Endpoint: Crashes by Light Conditions (Day vs Night)
+@app.route("/data/light-conditions", methods=["GET"])
+def crashes_by_light_conditions():
     try:
         with engine.connect() as connection:
             query = """
                 SELECT 
                     CASE 
-                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%DAY%' THEN 'Day'
-                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%NIGHT%' THEN 'Night'
-                        ELSE 'Other'
+                        WHEN LIGHTCONDITIONSPRIMARY IN ('1 - DAYLIGHT') THEN 'Day'
+                        ELSE 'Night'
                     END AS LightCondition,
                     COUNT(*) AS CrashCount
                 FROM [dbo].[CrashData]
                 WHERE LIGHTCONDITIONSPRIMARY IS NOT NULL
                 GROUP BY 
                     CASE 
-                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%DAY%' THEN 'Day'
-                        WHEN LIGHTCONDITIONSPRIMARY LIKE '%NIGHT%' THEN 'Night'
-                        ELSE 'Other'
-                    END
-                ORDER BY CrashCount DESC;
+                        WHEN LIGHTCONDITIONSPRIMARY IN ('1 - DAYLIGHT') THEN 'Day'
+                        ELSE 'Night'
+                    END;
             """
             result = connection.execute(text(query))
             data = [{"label": row["LightCondition"], "value": row["CrashCount"]} for row in result]

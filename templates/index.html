@@ -5,74 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Data Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .chart-container {
-            width: 50%;
-            margin: 20px auto;
-        }
-    </style>
 </head>
 <body>
     <h1>Crash Data Dashboard</h1>
 
-    <div class="chart-container">
-        <h2>Crashes by Vehicle Type</h2>
-        <canvas id="vehicleTypeChart"></canvas>
-    </div>
+    <h2>Crashes by Vehicle Type</h2>
+    <canvas id="vehicleTypeChart" width="400" height="400"></canvas>
 
-    <div class="chart-container">
-        <h2>Crashes by Gender</h2>
-        <canvas id="genderChart"></canvas>
-    </div>
+    <h2>Crashes by Gender</h2>
+    <canvas id="genderChart" width="400" height="400"></canvas>
 
-    <div class="chart-container">
-        <h2>Crashes by Light Conditions</h2>
-        <canvas id="lightConditionChart"></canvas>
-    </div>
+    <h2>Crashes by Light Conditions</h2>
+    <canvas id="lightConditionChart" width="400" height="400"></canvas>
 
     <script>
-        async function fetchData(endpoint) {
-            const response = await fetch(endpoint);
+        async function fetchData(url) {
+            const response = await fetch(url);
             return response.json();
         }
 
-        function createPieChart(canvasId, chartData, chartLabel) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            const labels = chartData.map(data => data.label);
-            const values = chartData.map(data => data.value);
-
+        function createPieChart(ctx, labels, data, title) {
             new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: chartLabel,
-                        data: values,
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(192, 75, 75, 0.6)',
-                            'rgba(75, 75, 192, 0.6)',
-                            'rgba(192, 192, 75, 0.6)',
-                            'rgba(75, 192, 75, 0.6)'
-                        ],
-                        borderColor: 'rgba(255, 255, 255, 1)',
-                        borderWidth: 1
+                        data: data,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
                     }]
                 },
                 options: {
-                    responsive: true
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: title
+                        }
+                    }
                 }
             });
         }
 
-        // Fetch and render the charts
-        fetchData('/crash-data/vehicle-type').then(data => createPieChart('vehicleTypeChart', data, 'Vehicle Type'));
-        fetchData('/crash-data/gender').then(data => createPieChart('genderChart', data, 'Gender'));
-        fetchData('/crash-data/light-conditions').then(data => createPieChart('lightConditionChart', data, 'Light Conditions'));
+        async function init() {
+            // Vehicle Type Chart
+            const vehicleTypeData = await fetchData('/data/vehicle-type');
+            const vehicleTypeLabels = vehicleTypeData.map(item => item.label);
+            const vehicleTypeValues = vehicleTypeData.map(item => item.value);
+            createPieChart(
+                document.getElementById('vehicleTypeChart').getContext('2d'),
+                vehicleTypeLabels,
+                vehicleTypeValues,
+                'Crashes by Vehicle Type'
+            );
+
+            // Gender Chart
+            const genderData = await fetchData('/data/gender');
+            const genderLabels = genderData.map(item => item.label);
+            const genderValues = genderData.map(item => item.value);
+            createPieChart(
+                document.getElementById('genderChart').getContext('2d'),
+                genderLabels,
+                genderValues,
+                'Crashes by Gender'
+            );
+
+            // Light Conditions Chart
+            const lightConditionData = await fetchData('/data/light-conditions');
+            const lightConditionLabels = lightConditionData.map(item => item.label);
+            const lightConditionValues = lightConditionData.map(item => item.value);
+            createPieChart(
+                document.getElementById('lightConditionChart').getContext('2d'),
+                lightConditionLabels,
+                lightConditionValues,
+                'Crashes by Light Conditions'
+            );
+        }
+
+        init();
     </script>
 </body>
 </html>
