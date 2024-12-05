@@ -13,7 +13,7 @@
         #filter {
             margin-bottom: 20px;
         }
-        #unitType {
+        #vehicleType {
             padding: 8px;
             font-size: 14px;
         }
@@ -25,10 +25,10 @@
 <body>
     <h1>Crash Data Dashboard</h1>
 
-    <!-- Dropdown for UNITTYPE -->
+    <!-- Dropdown for VEHICLETYPE -->
     <div id="filter">
-        <label for="unitType">Filter by Vehicle Type:</label>
-        <select id="unitType">
+        <label for="vehicleType">Filter by Vehicle Type:</label>
+        <select id="vehicleType">
             <option value="">All</option>
         </select>
     </div>
@@ -46,7 +46,7 @@
                 const response = await fetch('/vehicle-types');
                 const vehicleTypes = await response.json();
 
-                const dropdown = document.getElementById('unitType');
+                const dropdown = document.getElementById('vehicleType');
                 vehicleTypes.forEach(type => {
                     const option = document.createElement('option');
                     option.value = type;
@@ -59,9 +59,9 @@
         }
 
         // Function to fetch crash data and update the chart
-        async function fetchCrashData(unitType = "") {
+        async function fetchCrashData(vehicleType = "") {
             try {
-                const response = await fetch(`/crash-data?unit_type=${unitType}`);
+                const response = await fetch(`/crash-data?vehicle_type=${vehicleType}`);
                 const data = await response.json();
 
                 if (crashChart) crashChart.destroy();
@@ -71,14 +71,13 @@
                 const counts = Array(12).fill(0);
 
                 data.forEach(d => {
-                    counts[d.month - 1] = d.count; // Populate counts for each month
+                    counts[d.month - 1] = d.count;
                 });
 
-                // Create chart
                 crashChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: labels.map(month => `Month ${month}`), // Label as 'Month X'
+                        labels: labels.map(month => `Month ${month}`),
                         datasets: [{
                             label: 'Number of Crashes',
                             data: counts,
@@ -108,9 +107,9 @@
         fetchCrashData();
 
         // Update chart when dropdown value changes
-        document.getElementById('unitType').addEventListener('change', (e) => {
-            const unitType = e.target.value;
-            fetchCrashData(unitType);
+        document.getElementById('vehicleType').addEventListener('change', (e) => {
+            const vehicleType = e.target.value;
+            fetchCrashData(vehicleType);
         });
     </script>
 </body>

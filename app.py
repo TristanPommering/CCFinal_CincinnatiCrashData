@@ -20,25 +20,25 @@ def index():
 
 @app.route("/crash-data", methods=["GET"])
 def get_crash_data():
-    # Get UNITTYPE filter from the request (default: None)
-    unit_type = request.args.get("unit_type", None)
+    # Get VEHICLETYPE filter from the request (default: None)
+    vehicle_type = request.args.get("vehicle_type", None)
 
     try:
         with engine.connect() as connection:
-            # Base query to get crashes grouped by month (1-12)
+            # Base query to get crashes grouped by month
             query = """
                 SELECT 
-                    MONTH([CRASHDATE]) AS CrashMonth, -- Numeric month
+                    INTEGERMONTH AS CrashMonth,
                     COUNT(*) AS CrashCount
                 FROM [dbo].[CrashData]
-                WHERE (:unit_type IS NULL OR [UNITTYPE] = :unit_type) -- Optional filter
-                GROUP BY MONTH([CRASHDATE])
-                ORDER BY CrashMonth
+                WHERE (:vehicle_type IS NULL OR VEHICLETYPE = :vehicle_type)
+                GROUP BY INTEGERMONTH
+                ORDER BY INTEGERMONTH;
             """
 
-            result = connection.execute(
-                text(query), {"unit_type": unit_type} if unit_type else {}
-            )
+            # Execute the query with or without the filter
+            params = {"vehicle_type": vehicle_type} if vehicle_type else {}
+            result = connection.execute(text(query), params)
 
             # Format rows as dictionaries with proper keys
             crash_data = [{"month": row["CrashMonth"], "count": row["CrashCount"]} for row in result]
@@ -49,12 +49,11 @@ def get_crash_data():
 
 @app.route("/vehicle-types", methods=["GET"])
 def get_vehicle_types():
-    # Fetch distinct UNITTYPE values
     try:
         with engine.connect() as connection:
-            query = "SELECT DISTINCT [UNITTYPE] FROM [dbo].[CrashData] ORDER BY [UNITTYPE]"
+            query = "SELECT DISTINCT [VEHICLETYPE] FROM [dbo].[CrashData] ORDER BY [VEHICLETYPE];"
             result = connection.execute(text(query))
-            vehicle_types = [row["UNITTYPE"] for row in result]
+            vehicle_types = [row["VEHICLETYPE"] for row in result]
         return jsonify(vehicle_types)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
