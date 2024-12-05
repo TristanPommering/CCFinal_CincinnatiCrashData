@@ -31,7 +31,7 @@ def crashes_by_vehicle_type():
                 ORDER BY CrashCount DESC;
             """
             result = connection.execute(text(query))
-            data = [{"label": row["VEHICLETYPE"], "value": row["CrashCount"]} for row in result]
+            data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -49,7 +49,7 @@ def crashes_by_gender():
                 ORDER BY CrashCount DESC;
             """
             result = connection.execute(text(query))
-            data = [{"label": row["GENDER"], "value": row["CrashCount"]} for row in result]
+            data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -75,7 +75,7 @@ def crashes_by_light_conditions():
                     END;
             """
             result = connection.execute(text(query))
-            data = [{"label": row["LightCondition"], "value": row["CrashCount"]} for row in result]
+            data = [{"label": row[0], "value": int(row[1])} for row in result]
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
