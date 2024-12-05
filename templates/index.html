@@ -46,11 +46,6 @@
                 const response = await fetch('/vehicle-types');
                 const vehicleTypes = await response.json();
 
-                if (!vehicleTypes || vehicleTypes.length === 0) {
-                    console.error("No vehicle types found.");
-                    alert("No vehicle types available in the database.");
-                }
-
                 const dropdown = document.getElementById('vehicleType');
                 vehicleTypes.forEach(type => {
                     const option = document.createElement('option');
@@ -58,10 +53,8 @@
                     option.textContent = type;
                     dropdown.appendChild(option);
                 });
-                console.log("Vehicle types loaded:", vehicleTypes);
             } catch (error) {
                 console.error("Error fetching vehicle types:", error);
-                alert("An error occurred while loading vehicle types.");
             }
         }
 
@@ -70,11 +63,6 @@
             try {
                 const response = await fetch(`/crash-data?vehicle_type=${vehicleType}`);
                 const data = await response.json();
-
-                if (!data || data.length === 0) {
-                    console.error("No crash data found.");
-                    alert("No crash data available for the selected vehicle type.");
-                }
 
                 if (crashChart) crashChart.destroy();
 
@@ -106,10 +94,8 @@
                         }
                     }
                 });
-                console.log("Crash data loaded:", data);
             } catch (error) {
                 console.error("Error fetching crash data:", error);
-                alert("An error occurred while loading crash data.");
             }
         }
 

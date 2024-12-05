@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from sqlalchemy import create_engine
-from sqlalchemy import text
+from sqlalchemy.sql import text
 import pyodbc
 
 app = Flask(__name__)
@@ -20,12 +20,9 @@ def index():
 
 @app.route("/crash-data", methods=["GET"])
 def get_crash_data():
-    # Get VEHICLETYPE filter from the request (default: None)
     vehicle_type = request.args.get("vehicle_type", None)
-
     try:
         with engine.connect() as connection:
-            # Base query to get crashes grouped by month
             query = """
                 SELECT 
                     INTEGERMONTH AS CrashMonth,
@@ -35,9 +32,8 @@ def get_crash_data():
                 GROUP BY INTEGERMONTH
                 ORDER BY INTEGERMONTH;
             """
-
-            # Execute the query with or without the filter
-            params = {"vehicle_type": vehicle_type} if vehicle_type else {}
+            # Corrected parameter handling
+            params = {"vehicle_type": vehicle_type} if vehicle_type else {"vehicle_type": None}
             result = connection.execute(text(query), params)
 
             # Format rows as dictionaries with proper keys
@@ -45,7 +41,6 @@ def get_crash_data():
 
         return jsonify(crash_data)
     except Exception as e:
-        app.logger.error(f"Error fetching crash data: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/vehicle-types", methods=["GET"])
@@ -54,11 +49,10 @@ def get_vehicle_types():
         with engine.connect() as connection:
             query = "SELECT DISTINCT [VEHICLETYPE] FROM [dbo].[CrashData] ORDER BY [VEHICLETYPE];"
             result = connection.execute(text(query))
-            vehicle_types = [row["VEHICLETYPE"] for row in result]
+            vehicle_types = [row["VEHICLETYPE"] for row in result if row["VEHICLETYPE"]]  # Filter nulls
         return jsonify(vehicle_types)
     except Exception as e:
-        app.logger.error(f"Error fetching vehicle types: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)  # Disable debugging for production
