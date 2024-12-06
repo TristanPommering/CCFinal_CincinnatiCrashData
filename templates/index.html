@@ -34,8 +34,8 @@
             margin-bottom: 10px;
         }
         #crashesByMonthChart {
-            width: 600px !important; /* Adjust width for larger chart */
-            height: 400px !important; /* Adjust height for larger chart */
+            width: 800px !important; /* Slightly larger width */
+            height: 600px !important; /* Keep proportional height */
         }
     </style>
 </head>
@@ -149,11 +149,17 @@
             const dropdown = document.getElementById('vehicleTypeFilter');
             let chart;
 
+            // Month names for display
+            const monthNames = [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ];
+
             // Update the bar chart
             async function updateChart() {
                 const vehicleType = dropdown.value || null;
                 const crashesData = await fetchCrashesByMonth(vehicleType);
-                const labels = crashesData.map(item => `Month ${item.month}`);
+                const labels = crashesData.map(item => monthNames[item.month - 1]); // Convert month numbers to names
                 const values = crashesData.map(item => item.count);
 
                 if (chart) chart.destroy(); // Destroy the previous chart instance
