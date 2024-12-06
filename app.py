@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 import logging
@@ -47,10 +47,21 @@ def crashes_by_gender():
     try:
         with engine.connect() as connection:
             query = """
-                SELECT GENDER, COUNT(*) AS CrashCount
+                SELECT 
+                    CASE 
+                        WHEN GENDER IN ('F - FEMALE', 'FEMALE') THEN 'Female'
+                        WHEN GENDER IN ('M - MALE', 'MALE') THEN 'Male'
+                        ELSE 'Unknown'
+                    END AS CleanedGender,
+                    COUNT(*) AS CrashCount
                 FROM [dbo].[CrashData]
                 WHERE GENDER IS NOT NULL
-                GROUP BY GENDER
+                GROUP BY 
+                    CASE 
+                        WHEN GENDER IN ('F - FEMALE', 'FEMALE') THEN 'Female'
+                        WHEN GENDER IN ('M - MALE', 'MALE') THEN 'Male'
+                        ELSE 'Unknown'
+                    END
                 ORDER BY CrashCount DESC;
             """
             result = connection.execute(text(query))
@@ -59,6 +70,7 @@ def crashes_by_gender():
     except Exception as e:
         app.logger.error(f"Error fetching gender data: {e}")
         return jsonify({"error": "Failed to fetch data from the database."}), 500
+
 
 # Endpoint: Crashes by Light Conditions (Day vs Night)
 @app.route("/data/light-conditions", methods=["GET"])

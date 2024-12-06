@@ -33,6 +33,10 @@
         #vehicleTypeFilter {
             margin-bottom: 10px;
         }
+        #crashesByMonthChart {
+            width: 600px !important; /* Adjust width for larger chart */
+            height: 400px !important; /* Adjust height for larger chart */
+        }
     </style>
 </head>
 <body>
@@ -57,17 +61,23 @@
     </div>
 
     <script>
+        // Helper function to fetch data
         async function fetchData(url) {
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                return data.error ? [] : data;
+                if (data.error) {
+                    console.error("API Error:", data.error);
+                    return [];
+                }
+                return data;
             } catch (error) {
                 console.error("Error fetching data:", error);
                 return [];
             }
         }
 
+        // Create a pie chart
         function createPieChart(ctx, labels, data, title) {
             new Chart(ctx, {
                 type: 'pie',
@@ -88,6 +98,7 @@
             });
         }
 
+        // Create a bar chart
         function createBarChart(ctx, labels, data) {
             return new Chart(ctx, {
                 type: 'bar',
@@ -113,6 +124,7 @@
             });
         }
 
+        // Fetch vehicle types for the dropdown
         async function fetchVehicleTypes() {
             const vehicleTypeData = await fetchData('/data/vehicle-type');
             const dropdown = document.getElementById('vehicleTypeFilter');
@@ -124,6 +136,7 @@
             });
         }
 
+        // Fetch and update crashes by month
         async function fetchCrashesByMonth(vehicleType) {
             const url = vehicleType
                 ? `/data/crashes-by-month?vehicle_type=${encodeURIComponent(vehicleType)}`
@@ -136,22 +149,26 @@
             const dropdown = document.getElementById('vehicleTypeFilter');
             let chart;
 
+            // Update the bar chart
             async function updateChart() {
                 const vehicleType = dropdown.value || null;
                 const crashesData = await fetchCrashesByMonth(vehicleType);
                 const labels = crashesData.map(item => `Month ${item.month}`);
                 const values = crashesData.map(item => item.count);
 
-                if (chart) chart.destroy();
+                if (chart) chart.destroy(); // Destroy the previous chart instance
                 chart = createBarChart(ctx, labels, values);
             }
 
+            // Listen for dropdown changes
             dropdown.addEventListener('change', updateChart);
 
+            // Fetch dropdown options and initialize the chart
             await fetchVehicleTypes();
             await updateChart();
         }
 
+        // Initialize all charts
         async function init() {
             const vehicleTypeData = await fetchData('/data/vehicle-type');
             const vehicleTypeLabels = vehicleTypeData.map(item => item.label);
@@ -183,6 +200,7 @@
                 'Crashes by Light Conditions'
             );
 
+            // Initialize the bar chart
             initCrashesByMonthChart();
         }
 
