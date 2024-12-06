@@ -37,6 +37,10 @@
             width: 800px !important; /* Slightly larger width */
             height: 600px !important; /* Keep proportional height */
         }
+        #predictionChart {
+            width: 800px !important; /* Larger width for prediction chart */
+            height: 600px !important; /* Keep proportional height */
+        }
     </style>
 </head>
 <body>
@@ -57,6 +61,11 @@
                 <option value="">All Vehicle Types</option>
             </select>
             <canvas id="crashesByMonthChart"></canvas>
+        </div>
+
+        <div id="prediction-container">
+            <h2>Total Crashes: 2022-2025 (Prediction for 2025)</h2>
+            <canvas id="predictionChart"></canvas>
         </div>
     </div>
 
@@ -124,6 +133,33 @@
             });
         }
 
+        // Create a line chart for predictions
+        function createLineChart(ctx, labels, data, title) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Crashes',
+                        data: data,
+                        borderColor: '#FF5733',
+                        fill: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: title }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Year' } },
+                        y: { title: { display: true, text: 'Total Crashes' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
         // Fetch vehicle types for the dropdown
         async function fetchVehicleTypes() {
             const vehicleTypeData = await fetchData('/data/vehicle-type');
@@ -174,6 +210,16 @@
             await updateChart();
         }
 
+        // Fetch and display predictions
+        async function fetchPredictions() {
+            const predictionData = await fetchData('/data/predictions');
+            const years = predictionData.map(item => item.year);
+            const crashes = predictionData.map(item => item.crashes);
+
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            createLineChart(ctx, years, crashes, 'Crashes (2022-2025 with Prediction for 2025)');
+        }
+
         // Initialize all charts
         async function init() {
             const vehicleTypeData = await fetchData('/data/vehicle-type');
@@ -206,8 +252,9 @@
                 'Crashes by Light Conditions'
             );
 
-            // Initialize the bar chart
-            initCrashesByMonthChart();
+            // Initialize the bar chart and prediction chart
+            await initCrashesByMonthChart();
+            await fetchPredictions();
         }
 
         init();

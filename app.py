@@ -2,6 +2,9 @@ from flask import Flask, render_template, jsonify, request
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 import logging
+from sklearn.linear_model import LinearRegression
+import numpy as np
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -118,7 +121,40 @@ def crashes_by_month():
         app.logger.error(f"Error fetching crashes by month: {e}")
         return jsonify({"error": "Failed to fetch data from the database."}), 500
     
-    
+# Endpoint: Predict crashes for 2025
+@app.route("/data/predictions", methods=["GET"])
+def predict_crashes():
+    try:
+        with engine.connect() as connection:
+            query = """
+                SELECT YEAR, COUNT(*) AS TotalCrashes
+                FROM [dbo].[CrashData]
+                GROUP BY YEAR
+                ORDER BY YEAR;
+            """
+            result = connection.execute(text(query))
+            data = [{"year": row[0], "crashes": int(row[1])} for row in result]
+
+        # Convert to DataFrame for modeling
+        df = pd.DataFrame(data)
+        X = df["year"].values.reshape(-1, 1)  # Years as features
+        y = df["crashes"].values  # Crash counts as targets
+
+        # Train a simple linear regression model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Predict for 2025
+        future_year = np.array([[2025]])
+        prediction = model.predict(future_year)
+
+        # Add prediction to the data
+        data.append({"year": 2025, "crashes": int(prediction[0])})
+
+        return jsonify(data)
+    except Exception as e:
+        app.logger.error(f"Error in prediction: {e}")
+        return jsonify({"error": "Failed to generate predictions."}), 500    
 
 if __name__ == "__main__":
     app.run(debug=True)
