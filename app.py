@@ -156,5 +156,97 @@ def predict_crashes():
         app.logger.error(f"Error in prediction: {e}")
         return jsonify({"error": "Failed to generate predictions."}), 500    
 
+def columns_exist():
+    try:
+        with engine.connect() as connection:
+            # Add INTEGERMONTH column if not exists
+            connection.execute("""
+                IF NOT EXISTS (
+                    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'CrashData' AND COLUMN_NAME = 'INTEGERMONTH'
+                )
+                ALTER TABLE [dbo].[CrashData] ADD INTEGERMONTH INT;
+            """)
+            # Add VEHICLETYPE column if not exists
+            connection.execute("""
+                IF NOT EXISTS (
+                    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'CrashData' AND COLUMN_NAME = 'VEHICLETYPE'
+                )
+                ALTER TABLE [dbo].[CrashData] ADD VEHICLETYPE NVARCHAR(50);
+            """)
+    except Exception as e:
+        app.logger.error(f"Error ensuring columns exist: {e}")
+        raise e
+
+# Function to derive INTEGERMONTH and VEHICLETYPE
+def process_data(df):
+    # Add INTEGERMONTH column
+    if 'INTEGERMONTH' not in df.columns:
+        df['INTEGERMONTH'] = pd.to_datetime(df['CRASHDATE']).dt.month
+    
+    # Add VEHICLETYPE column
+    if 'VEHICLETYPE' not in df.columns:
+        df['VEHICLETYPE'] = df['UNITTYPE'].map({
+            '01 - PASSENGER CAR': 'Passenger Vehicle',
+            '02 - PASSENGER VAN (MINIVAN)': 'Passenger Vehicle',
+            '03 - SPORT UTILITY VEHICLE': 'SUV',
+            '04 - PICK UP': 'Truck',
+            '05 - CARGO VAN': 'Commercial Vehicles',
+            '06 - VAN (9-15 SEATS)': 'Commercial Vehicles',
+            '07 - PICKUP': 'Truck',
+            '07 - MOTORCYCLE 2 WHEELED': 'Motorcycle',
+            '08 - MOTORCYCLE 3 WHEELED': 'Motorcycle',
+            '09 - AUTOCYCLE': 'Motorcycle',
+            '10 - MOPED OR MOTORIZED BICYCLE': 'Motorcycle',
+            '26 - BICYCLE': 'Bicycle',
+            '15 - SEMI-TRACTOR': 'Commercial Vehicles',
+            '16 - FARM EQUIPMENT': 'Commercial Vehicles',
+            '19 - BUS (16+ PASSENGERS)': 'Commercial Vehicles',
+            '21 - HEAVY EQUIPMENT': 'Commercial Vehicles',
+            '11 - ALL TERRAIN VEHICLE (ATV/UTV)': 'Other',
+            '12 - GOLF CART': 'Other',
+            '17 - MOTORHOME': 'Other',
+            '20 - OTHER VEHICLE': 'Other',
+            '23 - PEDESTRIAN/SKATER': 'Other',
+            '24 - WHEELCHAIR (ANY TYPE)': 'Other',
+            '25 - OTHER NON-MOTORIST': 'Other',
+            '27 - TRAIN': 'Other',
+            '99 - UNKNOWN OR HIT/SKIP': 'Other'
+        }).fillna('Other')
+    
+    return df
+
+# Endpoint for data loading
+@app.route("/upload", methods=["POST"])
+def upload_data():
+    columns_exist()  # Ensure required columns exist
+    try:
+        # Check if a file is uploaded
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded."}), 400
+        
+        file = request.files['file']
+        if not file.filename.endswith('.csv'):
+            return jsonify({"error": "Invalid file type. Please upload a CSV file."}), 400
+        
+        # Read the CSV file into a DataFrame
+        df = pd.read_csv(file)
+        
+        # Process the data
+        df = process_data(df)
+
+        # Insert the data into the database
+        df.to_sql('CrashData', con=engine, if_exists='append', index=False)
+        return jsonify({"message": "Data uploaded and processed successfully."}), 200
+    except Exception as e:
+        app.logger.error(f"Error uploading data: {e}")
+        return jsonify({"error": "Failed to upload and process data."}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
+
