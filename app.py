@@ -86,6 +86,27 @@ def crashes_by_light_conditions():
     except Exception as e:
         app.logger.error(f"Error fetching light condition data: {e}")
         return jsonify({"error": "Failed to fetch data from the database."}), 500
+    
+@app.route("/data/crashes-by-month", methods=["GET"])
+def crashes_by_month():
+    try:
+        vehicle_type = request.args.get("vehicle_type", None)
+        query = """
+            SELECT INTEGERMONTH, COUNT(*) AS CrashCount
+            FROM [dbo].[CrashData]
+            WHERE (:vehicle_type IS NULL OR VEHICLETYPE = :vehicle_type)
+            GROUP BY INTEGERMONTH
+            ORDER BY INTEGERMONTH;
+        """
+        with engine.connect() as connection:
+            result = connection.execute(text(query), {"vehicle_type": vehicle_type})
+            data = [{"month": row[0], "count": int(row[1])} for row in result]
+        return jsonify(data)
+    except Exception as e:
+        app.logger.error(f"Error fetching crashes by month: {e}")
+        return jsonify({"error": "Failed to fetch data from the database."}), 500
+    
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
