@@ -27,7 +27,10 @@
             flex: 2;
             margin-left: 20px;
         }
-        #content-container select {
+        #bar-chart-container {
+            margin-top: 20px;
+        }
+        #vehicleTypeFilter {
             margin-bottom: 10px;
         }
     </style>
@@ -44,11 +47,13 @@
         <canvas id="lightConditionChart"></canvas>
     </div>
     <div id="content-container">
-        <h2>Crashes by Month</h2>
-        <select id="vehicleTypeFilter">
-            <option value="">All Vehicle Types</option>
-        </select>
-        <canvas id="crashesByMonthChart"></canvas>
+        <div id="bar-chart-container">
+            <h2>Crashes by Month</h2>
+            <select id="vehicleTypeFilter">
+                <option value="">All Vehicle Types</option>
+            </select>
+            <canvas id="crashesByMonthChart"></canvas>
+        </div>
     </div>
 
     <script>
@@ -156,6 +161,26 @@
                 vehicleTypeLabels,
                 vehicleTypeValues,
                 'Crashes by Vehicle Type'
+            );
+
+            const genderData = await fetchData('/data/gender');
+            const genderLabels = genderData.map(item => item.label);
+            const genderValues = genderData.map(item => item.value);
+            createPieChart(
+                document.getElementById('genderChart').getContext('2d'),
+                genderLabels,
+                genderValues,
+                'Crashes by Gender'
+            );
+
+            const lightConditionData = await fetchData('/data/light-conditions');
+            const lightConditionLabels = lightConditionData.map(item => item.label);
+            const lightConditionValues = lightConditionData.map(item => item.value);
+            createPieChart(
+                document.getElementById('lightConditionChart').getContext('2d'),
+                lightConditionLabels,
+                lightConditionValues,
+                'Crashes by Light Conditions'
             );
 
             initCrashesByMonthChart();
