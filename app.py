@@ -181,9 +181,13 @@ def columns_exist():
 
 # Function to derive INTEGERMONTH and VEHICLETYPE
 def process_data(df):
+    # Handle missing or mixed data types
+    df['AGE'] = pd.to_numeric(df['AGE'], errors='coerce')  # Convert AGE to numeric, set invalid values to NaN
+    df['ZIP'] = pd.to_numeric(df['ZIP'], errors='coerce')  # Convert ZIP to numeric
+
     # Add INTEGERMONTH column
     if 'INTEGERMONTH' not in df.columns:
-        df['INTEGERMONTH'] = pd.to_datetime(df['CRASHDATE']).dt.month
+        df['INTEGERMONTH'] = pd.to_datetime(df['CRASHDATE'], errors='coerce').dt.month
     
     # Add VEHICLETYPE column
     if 'VEHICLETYPE' not in df.columns:
@@ -214,10 +218,12 @@ def process_data(df):
             '27 - TRAIN': 'Other',
             '99 - UNKNOWN OR HIT/SKIP': 'Other'
         }).fillna('Other')
-    
+
     return df
 
+
 # Endpoint for data loading
+@app.route("/upload", methods=["POST"])
 @app.route("/upload", methods=["POST"])
 def upload_data():
     columns_exist()  # Ensure required columns exist
@@ -231,17 +237,31 @@ def upload_data():
             return jsonify({"error": "Invalid file type. Please upload a CSV file."}), 400
         
         # Read the CSV file into a DataFrame
-        df = pd.read_csv(file)
-        
+        try:
+            df = pd.read_csv(file)
+        except Exception as e:
+            app.logger.error(f"Error reading CSV file: {e}")
+            return jsonify({"error": "Failed to read the CSV file. Ensure it is correctly formatted."}), 400
+
         # Process the data
-        df = process_data(df)
+        try:
+            df = process_data(df)
+        except Exception as e:
+            app.logger.error(f"Error processing data: {e}")
+            return jsonify({"error": "Failed to process the data."}), 500
 
         # Insert the data into the database
-        df.to_sql('CrashData', con=engine, if_exists='append', index=False)
+        try:
+            df.to_sql('CrashData', con=engine, if_exists='append', index=False)
+        except Exception as e:
+            app.logger.error(f"Error inserting data into the database: {e}")
+            return jsonify({"error": "Failed to insert data into the database."}), 500
+
         return jsonify({"message": "Data uploaded and processed successfully."}), 200
     except Exception as e:
-        app.logger.error(f"Error uploading data: {e}")
-        return jsonify({"error": "Failed to upload and process data."}), 500
+        app.logger.error(f"Unexpected error: {e}")
+        return jsonify({"error": "An unexpected error occurred."}), 500
+
 
 
 if __name__ == "__main__":

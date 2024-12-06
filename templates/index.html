@@ -113,22 +113,25 @@
                 return;
             }
             formData.append('file', fileInput.files[0]);
-
+        
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
                 const result = await response.json();
-                alert(result.message || result.error);
-                if (result.message) {
+                if (response.ok) {
+                    alert(result.message);
                     location.reload(); // Reload the page to fetch new data
+                } else {
+                    alert(result.error || 'Failed to upload file.');
                 }
             } catch (error) {
                 console.error('Error uploading file:', error);
-                alert('Failed to upload file.');
+                alert('Failed to upload file. Check the console for details.');
             }
         }
+        
 
         // Create a pie chart
         function createPieChart(ctx, labels, data, title) {
