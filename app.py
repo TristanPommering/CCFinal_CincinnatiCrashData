@@ -338,6 +338,56 @@ def get_crash_statistics():
         app.logger.error(f"Error fetching statistics: {e}")
         return jsonify({"error": "Failed to fetch statistics."}), 500
 
+def predict_crash_severity():
+    try:
+        # Query crash data
+        with engine.connect() as connection:
+            query = """
+                SELECT 
+                    CRASHSEVERITYID, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
+                FROM [dbo].[CrashData]
+                WHERE CRASHSEVERITYID IS NOT NULL
+                  AND VEHICLETYPE IS NOT NULL
+                  AND LIGHTCONDITIONSPRIMARY IS NOT NULL
+                  AND ROADCONDITIONSPRIMARY IS NOT NULL;
+            """
+            result = connection.execute(text(query))
+            data = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+        # Preprocess data
+        features = ['VEHICLETYPE', 'LIGHTCONDITIONSPRIMARY', 'ROADCONDITIONSPRIMARY']
+        target = 'CRASHSEVERITYID'
+
+        # Encode categorical variables
+        data = pd.get_dummies(data, columns=features)
+        
+        X = data.drop(columns=[target])
+        y = data[target]
+
+        # Train-test split
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Train the model
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X_train, y_train)
+
+        # Process input data from request
+        input_data = request.get_json()
+        input_df = pd.DataFrame([input_data])
+        input_df = pd.get_dummies(input_df)
+        input_df = input_df.reindex(columns=X.columns, fill_value=0)
+
+        # Predict severity probabilities
+        probabilities = model.predict_proba(input_df)[0]
+        severity_labels = model.classes_
+
+        # Format the result as a dictionary of probabilities
+        result = {f"Severity {int(label)}": round(prob * 100, 2) for label, prob in zip(severity_labels, probabilities)}
+
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Error in severity prediction: {e}")
+        return jsonify({"error": "Failed to predict crash severity."}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

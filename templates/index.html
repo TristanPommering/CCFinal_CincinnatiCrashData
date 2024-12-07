@@ -176,7 +176,7 @@
 </head>
 <body>
     <header id="main-title">
-        <h1>Cincinnati Traffic Accident Analysis</h1>
+        <h1>Cincinnati Traffic Accident Analysis 2022-2024</h1>
     </header>
     <div id="stats-container">
         <div id="total-crashes" class="stat-box">
@@ -236,6 +236,50 @@
                 <button type="button" onclick="uploadFile()">Upload</button>
             </form>
         </div>
+        <div id="severity-prediction-container">
+            <h2>Predict Crash Severity</h2>
+            <form id="severityForm">
+                <label for="vehicleType">Vehicle Type:</label>
+                <select id="vehicleType" name="VEHICLETYPE">
+                    <option value="Passenger Vehicle">Passenger Vehicle</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Truck">Truck</option>
+                    <option value="Motorcycle">Motorcycle</option>
+                    <option value="Bicycle">Bicycle</option>
+                </select><br><br>
+        
+                <label for="lightCondition">Light Condition:</label>
+                <select id="lightCondition" name="LIGHTCONDITIONSPRIMARY">
+                    <option value="1 - DAYLIGHT">Daylight</option>
+                    <option value="2 - DUSK">Dusk</option>
+                    <option value="3 - DARK">Dark</option>
+                </select><br><br>
+        
+                <label for="roadCondition">Road Condition:</label>
+                <select id="roadCondition" name="ROADCONDITIONSPRIMARY">
+                    <option value="01 - DRY">Dry</option>
+                    <option value="02 - WET">Wet</option>
+                    <option value="03 - SNOW">Snow</option>
+                </select><br><br>
+        
+                <button type="button" onclick="submitSeverityForm()">Predict</button>
+            </form>
+        
+            <h3>Prediction Results</h3>
+            <table id="severityTable" border="1">
+                <thead>
+                    <tr>
+                        <th>Severity Level</th>
+                        <th>Likelihood (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2">No data yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>        
     </div>
 
     <script>
@@ -254,6 +298,42 @@
                 return [];
             }
         }
+
+        async function submitSeverityForm() {
+            const formData = {
+                VEHICLETYPE: document.getElementById("vehicleType").value,
+                LIGHTCONDITIONSPRIMARY: document.getElementById("lightCondition").value,
+                ROADCONDITIONSPRIMARY: document.getElementById("roadCondition").value
+            };
+        
+            try {
+                const response = await fetch('/data/predict-severity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+        
+                const result = await response.json();
+                if (result.error) {
+                    alert("Error: " + result.error);
+                    return;
+                }
+        
+                // Update the table with predictions
+                const severityTableBody = document.getElementById("severityTable").querySelector("tbody");
+                severityTableBody.innerHTML = ""; // Clear existing rows
+        
+                Object.entries(result).forEach(([severity, likelihood]) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${severity}</td><td>${likelihood}%</td>`;
+                    severityTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error predicting severity:", error);
+                alert("An error occurred while predicting crash severity.");
+            }
+        }
+        
 
         // Upload new data
         async function uploadFile() {
