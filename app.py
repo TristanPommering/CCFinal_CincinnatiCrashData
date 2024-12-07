@@ -338,6 +338,7 @@ def get_crash_statistics():
         app.logger.error(f"Error fetching statistics: {e}")
         return jsonify({"error": "Failed to fetch statistics."}), 500
 
+@app.route("/data/predict-severity", methods=["POST"])
 def predict_crash_severity():
     try:
         # Query crash data
@@ -355,12 +356,11 @@ def predict_crash_severity():
             data = pd.DataFrame(result.fetchall(), columns=result.keys())
 
         # Preprocess data
-        features = ['VEHICLETYPE', 'LIGHTCONDITIONSPRIMARY', 'ROADCONDITIONSPRIMARY']
-        target = 'CRASHSEVERITYID'
+        features = ["VEHICLETYPE", "LIGHTCONDITIONSPRIMARY", "ROADCONDITIONSPRIMARY"]
+        target = "CRASHSEVERITYID"
 
         # Encode categorical variables
         data = pd.get_dummies(data, columns=features)
-        
         X = data.drop(columns=[target])
         y = data[target]
 
@@ -375,7 +375,7 @@ def predict_crash_severity():
         input_data = request.get_json()
         input_df = pd.DataFrame([input_data])
         input_df = pd.get_dummies(input_df)
-        input_df = input_df.reindex(columns=X.columns, fill_value=0)
+        input_df = input_df.reindex(columns=X.columns, fill_value=0)  # Align with training columns
 
         # Predict severity probabilities
         probabilities = model.predict_proba(input_df)[0]
