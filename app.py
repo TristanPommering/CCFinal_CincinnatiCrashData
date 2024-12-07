@@ -345,7 +345,7 @@ def predict_crash_severity():
         with engine.connect() as connection:
             query = """
                 SELECT 
-                    CRASHSEVERITYID, CRASHSEVERITY, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
+                    CRASHSEVERITYID, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
                 FROM [dbo].[CrashData]
                 WHERE CRASHSEVERITYID IS NOT NULL
                   AND VEHICLETYPE IS NOT NULL
@@ -355,22 +355,14 @@ def predict_crash_severity():
             result = connection.execute(text(query))
             data = pd.DataFrame(result.fetchall(), columns=result.keys())
 
-        # Map CRASHSEVERITYID to CRASHSEVERITY
-        severity_mapping = {
-            201901: "Property Damage Only",
-            201902: "Minor Injury",
-            201903: "Serious Injury",
-            201904: "Fatal Injury",
-            201905: "Unknown"
-        }
-        data["CRASHSEVERITY"] = data["CRASHSEVERITYID"].map(severity_mapping)
-
         # Preprocess data
         features = ["VEHICLETYPE", "LIGHTCONDITIONSPRIMARY", "ROADCONDITIONSPRIMARY"]
-        target = "CRASHSEVERITY"
+        target = "CRASHSEVERITYID"
+
+        # Encode categorical variables
         data = pd.get_dummies(data, columns=features)
-        X = data.drop(columns=["CRASHSEVERITY", "CRASHSEVERITYID"])
-        y = data["CRASHSEVERITY"]
+        X = data.drop(columns=[target])
+        y = data[target]
 
         # Train-test split
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -390,16 +382,12 @@ def predict_crash_severity():
         severity_labels = model.classes_
 
         # Format the result as a dictionary of probabilities
-        result = {
-            severity_mapping.get(label, f"Severity {label}"): round(prob * 100, 2)
-            for label, prob in zip(severity_labels, probabilities)
-        }
+        result = {f"Severity {int(label)}": round(prob * 100, 2) for label, prob in zip(severity_labels, probabilities)}
 
         return jsonify(result)
     except Exception as e:
         app.logger.error(f"Error in severity prediction: {e}")
         return jsonify({"error": "Failed to predict crash severity."}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
