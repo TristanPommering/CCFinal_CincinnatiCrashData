@@ -1,378 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Data Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        display: flex;
-        flex-direction: row;
-      }
-      #charts-container {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-      canvas {
-        width: 300px !important;
-        height: 300px !important;
-        margin: 0 auto;
-      }
-      #content-container {
-        flex: 2;
-        margin-left: 20px;
-      }
-      #bar-chart-container {
-        margin-top: 20px;
-      }
-      #vehicleTypeFilter {
-        margin-bottom: 10px;
-      }
-      #crashesByMonthChart {
-        width: 800px !important;
-        height: 600px !important;
-      }
-      #predictionChart {
-        width: 800px !important;
-        height: 600px !important;
-      }
-      #uploadForm {
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      #uploadForm input,
-      #uploadForm button {
-        margin: 5px 0;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: row;
+        }
+        #charts-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        canvas {
+            width: 300px !important;
+            height: 300px !important;
+            margin: 0 auto;
+        }
+        #content-container {
+            flex: 2;
+            margin-left: 20px;
+        }
+        #bar-chart-container {
+            margin-top: 20px;
+        }
+        #vehicleTypeFilter {
+            margin-bottom: 10px;
+        }
+        #crashesByMonthChart {
+            width: 800px !important;
+            height: 600px !important;
+        }
+        #predictionChart {
+            width: 800px !important;
+            height: 600px !important;
+        }
+        #uploadForm {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #uploadForm input,
+        #uploadForm button {
+            margin: 5px 0;
+        }
     </style>
-  </head>
-  <body>
-    <div id="statistics-container">
-      <h2>Crash Statistics</h2>
-      <div id="statistics">
-        <p>
-          Total Crashes: <span id="totalCrashes"></span>
-        </p>
-        <p>
-          Average Crashes Per Day: <span id="avgCrashesPerDay"></span>
-        </p>
-        <p>
-          Most Common Crash Severity: <span id="mostCommonSeverity"></span>
-        </p>
-        <p>
-          Most Frequent Crash Time: <span id="mostFrequentTime"></span>
-        </p>
-      </div>
-    </div>
+</head>
+<body>
     <div id="charts-container">
-      <h2>Crashes by Vehicle Type</h2>
-      <canvas id="vehicleTypeChart"></canvas>
+        <h2>Crashes by Vehicle Type</h2>
+        <canvas id="vehicleTypeChart"></canvas>
 
-      <h2>Crashes by Gender</h2>
-      <canvas id="genderChart"></canvas>
+        <h2>Crashes by Gender</h2>
+        <canvas id="genderChart"></canvas>
 
-      <h2>Crashes by Light Conditions</h2>
-      <canvas id="lightConditionChart"></canvas>
+        <h2>Crashes by Light Conditions</h2>
+        <canvas id="lightConditionChart"></canvas>
     </div>
     <div id="content-container">
-      <div id="bar-chart-container">
-        <h2>Crashes by Month</h2>
-        <select id="vehicleTypeFilter">
-          <option value="">All Vehicle Types</option>
-        </select>
-        <canvas id="crashesByMonthChart"></canvas>
-      </div>
+        <div id="bar-chart-container">
+            <h2>Crashes by Month</h2>
+            <select id="vehicleTypeFilter">
+                <option value="">All Vehicle Types</option>
+            </select>
+            <canvas id="crashesByMonthChart"></canvas>
+        </div>
 
-      <div id="prediction-container">
-        <h2>Total Crashes: 2022-2025 (Prediction for 2025)</h2>
-        <canvas id="predictionChart"></canvas>
-      </div>
+        <div id="prediction-container">
+            <h2>Total Crashes: 2022-2025 (Prediction for 2025)</h2>
+            <canvas id="predictionChart"></canvas>
+        </div>
 
-      <div id="pieChartFilters">
-        <h3>Filters:</h3>
-        <label><input type="checkbox" class="filter" value="Day" checked />Day</label>
-        <label><input type="checkbox" class="filter" value="Night" checked />Night</label>
-      </div>
-
-      <div id="upload-container">
-        <h2>Upload New Crash Data</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
-          <input type="file" id="fileInput" name="file" accept=".csv" />
-          <button type="button" onclick="uploadFile()">Upload</button>
-        </form>
-      </div>
+        <div id="upload-container">
+            <h2>Upload New Crash Data</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="fileInput" name="file" accept=".csv">
+                <button type="button" onclick="uploadFile()">Upload</button>
+            </form>
+        </div>
     </div>
 
     <script>
-      // Helper function to fetch data
-      async function fetchData(url) {
-        try {
-          const response = await fetch(url)
-          const data = await response.json()
-          if (data.error) {
-            console.error('API Error:', data.error)
-            return []
-          }
-          return data
-        } catch (error) {
-          console.error('Error fetching data:', error)
-          return []
-        }
-      }
-      
-      // Upload new data
-      async function uploadFile() {
-        const formData = new FormData()
-        const fileInput = document.getElementById('fileInput')
-        if (!fileInput.files.length) {
-          alert('Please select a file to upload.')
-          return
-        }
-        formData.append('file', fileInput.files[0])
-      
-        try {
-          const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData
-          })
-          const result = await response.json()
-          if (response.ok) {
-            alert(result.message)
-            location.reload() // Reload the page to fetch new data
-          } else {
-            alert(result.error || 'Failed to upload file.')
-          }
-        } catch (error) {
-          console.error('Error uploading file:', error)
-          alert('Failed to upload file. Check the console for details.')
-        }
-      }
-      
-      function filterPieChart(chart, filters) {
-        const filteredData = chart.data.labels.map((label, index) => {
-          return filters.includes(label) ? chart.data.datasets[0].data[index] : 0
-        })
-        chart.data.datasets[0].data = filteredData
-        chart.update()
-      }
-      
-      function addPieChartFilters(chart) {
-        const filters = document.querySelectorAll('.filter')
-        filters.forEach((filter) => {
-          filter.addEventListener('change', () => {
-            const activeFilters = Array.from(filters)
-              .filter((f) => f.checked)
-              .map((f) => f.value)
-            filterPieChart(chart, activeFilters)
-          })
-        })
-      }
-      
-      // Create a pie chart
-      function createPieChart(ctx, labels, data, title) {
-        new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                data: data,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'top' },
-              title: { display: true, text: title }
-            }
-          }
-        })
-      }
-      
-      // Create a bar chart
-      function createBarChart(ctx, labels, data) {
-        return new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Number of Crashes',
-                data: data,
-                backgroundColor: '#36A2EB'
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'Crashes by Month' }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Month' } },
-              y: { title: { display: true, text: 'Crashes' }, beginAtZero: true }
-            }
-          }
-        })
-      }
-      
-      function createPieChart(ctx, labels, data, title) {
-        new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                data: data,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#ADFF2F', '#8B008B', '#4682B4']
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  usePointStyle: true
+        // Helper function to fetch data
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.error) {
+                    console.error("API Error:", data.error);
+                    return [];
                 }
-              },
-              title: {
-                display: true,
-                text: title
-              }
+                return data;
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return [];
             }
-          }
-        })
-      }
-      
-      // Create a line chart for predictions
-      function createLineChart(ctx, labels, data, title) {
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Total Crashes',
-                data: data,
-                borderColor: '#FF5733',
-                fill: false
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'top' },
-              title: { display: true, text: title }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Year' } },
-              y: { title: { display: true, text: 'Total Crashes' }, beginAtZero: true }
+        }
+
+        // Upload new data
+        async function uploadFile() {
+            const formData = new FormData();
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a file to upload.');
+                return;
             }
-          }
-        })
-      }
-      
-      // Fetch vehicle types for the dropdown
-      async function fetchVehicleTypes() {
-        const vehicleTypeData = await fetchData('/data/vehicle-type')
-        const dropdown = document.getElementById('vehicleTypeFilter')
-        vehicleTypeData.forEach((item) => {
-          const option = document.createElement('option')
-          option.value = item.label
-          option.textContent = item.label
-          dropdown.appendChild(option)
-        })
-      }
-      
-      // Fetch and update crashes by month
-      async function fetchCrashesByMonth(vehicleType) {
-        const url = vehicleType ? `/data/crashes-by-month?vehicle_type=${encodeURIComponent(vehicleType)}` : '/data/crashes-by-month'
-        return await fetchData(url)
-      }
-      
-      async function initCrashesByMonthChart() {
-        const ctx = document.getElementById('crashesByMonthChart').getContext('2d')
-        const dropdown = document.getElementById('vehicleTypeFilter')
-        let chart
-      
-        // Month names for display
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      
-        // Update the bar chart
-        async function updateChart() {
-          const vehicleType = dropdown.value || null
-          const crashesData = await fetchCrashesByMonth(vehicleType)
-          const labels = crashesData.map((item) => monthNames[item.month - 1])
-          const values = crashesData.map((item) => item.count)
-      
-          if (chart) chart.destroy()
-          chart = createBarChart(ctx, labels, values)
+            formData.append('file', fileInput.files[0]);
+        
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    location.reload(); // Reload the page to fetch new data
+                } else {
+                    alert(result.error || 'Failed to upload file.');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Failed to upload file. Check the console for details.');
+            }
         }
-      
-        // Listen for dropdown changes
-        dropdown.addEventListener('change', updateChart)
-      
-        // Fetch dropdown options and initialize the chart
-        await fetchVehicleTypes()
-        await updateChart()
-      }
-      
-      // Fetch and display predictions
-      async function fetchPredictions() {
-        const predictionData = await fetchData('/data/predictions')
-        const years = predictionData.map((item) => item.year)
-        const crashes = predictionData.map((item) => item.crashes)
-      
-        const ctx = document.getElementById('predictionChart').getContext('2d')
-        createLineChart(ctx, years, crashes, 'Crashes (2022-2025 with Prediction for 2025)')
-      }
-      
-      // Initialize all charts
-      async function init() {
-        const vehicleTypeData = await fetchData('/data/vehicle-type')
-        const vehicleTypeLabels = vehicleTypeData.map((item) => item.label)
-        const vehicleTypeValues = vehicleTypeData.map((item) => item.value)
-        createPieChart(document.getElementById('vehicleTypeChart').getContext('2d'), vehicleTypeLabels, vehicleTypeValues, 'Crashes by Vehicle Type')
-      
-        const genderData = await fetchData('/data/gender')
-        const genderLabels = genderData.map((item) => item.label)
-        const genderValues = genderData.map((item) => item.value)
-        createPieChart(document.getElementById('genderChart').getContext('2d'), genderLabels, genderValues, 'Crashes by Gender')
-      
-        const lightConditionData = await fetchData('/data/light-conditions')
-        const lightConditionLabels = lightConditionData.map((item) => item.label)
-        const lightConditionValues = lightConditionData.map((item) => item.value)
-        createPieChart(document.getElementById('lightConditionChart').getContext('2d'), lightConditionLabels, lightConditionValues, 'Crashes by Light Conditions')
-      
-        async function fetchStatistics() {
-          const stats = await fetchData('/data/statistics')
-          if (stats) {
-            document.getElementById('totalCrashes').textContent = stats.total_crashes
-            document.getElementById('avgCrashesPerDay').textContent = stats.avg_crashes_per_day.toFixed(2)
-            document.getElementById('mostCommonSeverity').textContent = stats.most_common_severity
-            document.getElementById('mostFrequentTime').textContent = stats.most_frequent_time
-          }
+        
+
+        // Create a pie chart
+        function createPieChart(ctx, labels, data, title) {
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: title }
+                    }
+                }
+            });
         }
-      
-        // Initialize the bar chart and prediction chart
-        await initCrashesByMonthChart()
-        await fetchPredictions()
-      }
-      
-      init()
+
+        // Create a bar chart
+        function createBarChart(ctx, labels, data) {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Crashes',
+                        data: data,
+                        backgroundColor: '#36A2EB',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Crashes by Month' }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Month' } },
+                        y: { title: { display: true, text: 'Crashes' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Create a line chart for predictions
+        function createLineChart(ctx, labels, data, title) {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Crashes',
+                        data: data,
+                        borderColor: '#FF5733',
+                        fill: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: title }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Year' } },
+                        y: { title: { display: true, text: 'Total Crashes' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Fetch vehicle types for the dropdown
+        async function fetchVehicleTypes() {
+            const vehicleTypeData = await fetchData('/data/vehicle-type');
+            const dropdown = document.getElementById('vehicleTypeFilter');
+            vehicleTypeData.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.label;
+                option.textContent = item.label;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Fetch and update crashes by month
+        async function fetchCrashesByMonth(vehicleType) {
+            const url = vehicleType
+                ? /data/crashes-by-month?vehicle_type=${encodeURIComponent(vehicleType)}
+                : '/data/crashes-by-month';
+            return await fetchData(url);
+        }
+
+        async function initCrashesByMonthChart() {
+            const ctx = document.getElementById('crashesByMonthChart').getContext('2d');
+            const dropdown = document.getElementById('vehicleTypeFilter');
+            let chart;
+
+            // Month names for display
+            const monthNames = [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ];
+
+            // Update the bar chart
+            async function updateChart() {
+                const vehicleType = dropdown.value || null;
+                const crashesData = await fetchCrashesByMonth(vehicleType);
+                const labels = crashesData.map(item => monthNames[item.month - 1]);
+                const values = crashesData.map(item => item.count);
+
+                if (chart) chart.destroy();
+                chart = createBarChart(ctx, labels, values);
+            }
+
+            // Listen for dropdown changes
+            dropdown.addEventListener('change', updateChart);
+
+            // Fetch dropdown options and initialize the chart
+            await fetchVehicleTypes();
+            await updateChart();
+        }
+
+        // Fetch and display predictions
+        async function fetchPredictions() {
+            const predictionData = await fetchData('/data/predictions');
+            const years = predictionData.map(item => item.year);
+            const crashes = predictionData.map(item => item.crashes);
+
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            createLineChart(ctx, years, crashes, 'Crashes (2022-2025 with Prediction for 2025)');
+        }
+
+        // Initialize all charts
+        async function init() {
+            const vehicleTypeData = await fetchData('/data/vehicle-type');
+            const vehicleTypeLabels = vehicleTypeData.map(item => item.label);
+            const vehicleTypeValues = vehicleTypeData.map(item => item.value);
+            createPieChart(
+                document.getElementById('vehicleTypeChart').getContext('2d'),
+                vehicleTypeLabels,
+                vehicleTypeValues,
+                'Crashes by Vehicle Type'
+            );
+
+            const genderData = await fetchData('/data/gender');
+            const genderLabels = genderData.map(item => item.label);
+            const genderValues = genderData.map(item => item.value);
+            createPieChart(
+                document.getElementById('genderChart').getContext('2d'),
+                genderLabels,
+                genderValues,
+                'Crashes by Gender'
+            );
+
+            const lightConditionData = await fetchData('/data/light-conditions');
+            const lightConditionLabels = lightConditionData.map(item => item.label);
+            const lightConditionValues = lightConditionData.map(item => item.value);
+            createPieChart(
+                document.getElementById('lightConditionChart').getContext('2d'),
+                lightConditionLabels,
+                lightConditionValues,
+                'Crashes by Light Conditions'
+            );
+
+            // Initialize the bar chart and prediction chart
+            await initCrashesByMonthChart();
+            await fetchPredictions();
+        }
+
+        init();
     </script>
-  </body>
+</body>
 </html>

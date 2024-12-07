@@ -262,43 +262,6 @@ def upload_data():
         app.logger.error(f"Unexpected error: {e}")
         return jsonify({"error": "An unexpected error occurred."}), 500
 
-@app.route("/data/statistics", methods=["GET"])
-def crash_statistics():
-    try:
-        with engine.connect() as connection:
-            total_crashes_query = "SELECT COUNT(*) FROM [dbo].[CrashData];"
-            avg_crashes_query = """
-                SELECT COUNT(*) / COUNT(DISTINCT CAST(CRASHDATE AS DATE)) AS AvgCrashesPerDay
-                FROM [dbo].[CrashData];
-            """
-            most_common_severity_query = """
-                SELECT TOP 1 CRASHSEVERITY, COUNT(*) AS Count
-                FROM [dbo].[CrashData]
-                GROUP BY CRASHSEVERITY
-                ORDER BY Count DESC;
-            """
-            most_frequent_time_query = """
-                SELECT TOP 1 CAST(CRASHDATE AS TIME) AS CrashTime, COUNT(*) AS Count
-                FROM [dbo].[CrashData]
-                GROUP BY CAST(CRASHDATE AS TIME)
-                ORDER BY Count DESC;
-            """
-
-            total_crashes = connection.execute(text(total_crashes_query)).scalar()
-            avg_crashes = connection.execute(text(avg_crashes_query)).scalar()
-            most_common_severity = connection.execute(text(most_common_severity_query)).fetchone()
-            most_frequent_time = connection.execute(text(most_frequent_time_query)).fetchone()
-
-        return jsonify({
-            "total_crashes": total_crashes,
-            "avg_crashes_per_day": avg_crashes,
-            "most_common_severity": most_common_severity[0],
-            "most_frequent_time": str(most_frequent_time[0])
-        })
-    except Exception as e:
-        app.logger.error(f"Error fetching statistics: {e}")
-        return jsonify({"error": "Failed to fetch statistics."}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
