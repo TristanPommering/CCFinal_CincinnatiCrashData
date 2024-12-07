@@ -305,42 +305,42 @@
                 LIGHTCONDITIONSPRIMARY: document.getElementById("lightCondition").value,
                 ROADCONDITIONSPRIMARY: document.getElementById("roadCondition").value
             };
-
+        
             // Client-side validation
             if (!formData.VEHICLETYPE || !formData.LIGHTCONDITIONSPRIMARY || !formData.ROADCONDITIONSPRIMARY) {
                 alert("Please fill in all fields.");
                 return;
             }
-
+        
             try {
                 const response = await fetch("/data/predict-severity", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData)
                 });
-
+        
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error("Server error:", errorText);
                     alert(`Server error: ${response.status}`);
                     return;
                 }
-
+        
                 const result = await response.json();
                 if (result.error) {
                     alert("Error: " + result.error);
                     return;
                 }
-
+        
                 // Update the table with predictions
                 const severityTableBody = document.getElementById("severityTable").querySelector("tbody");
                 severityTableBody.innerHTML = ""; // Clear existing rows
-
+        
                 if (Object.keys(result).length === 0) {
                     alert("No predictions were returned. Please check your input and try again.");
                     return;
                 }
-
+        
                 Object.entries(result).forEach(([severity, likelihood]) => {
                     const row = document.createElement("tr");
                     row.innerHTML = `<td>${severity}</td><td>${likelihood}%</td>`;
@@ -350,8 +350,7 @@
                 console.error("Error predicting severity:", error);
                 alert("Failed to connect to the server. Please try again later.");
             }
-        }
-        
+        }        
 
         // Upload new data
         async function uploadFile() {
