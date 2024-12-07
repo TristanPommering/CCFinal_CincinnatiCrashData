@@ -222,7 +222,7 @@
         // Fetch and update crashes by month
         async function fetchCrashesByMonth(vehicleType) {
             const url = vehicleType
-                ? /data/crashes-by-month?vehicle_type=${encodeURIComponent(vehicleType)}
+                ? `/data/crashes-by-month?vehicle_type=${encodeURIComponent(vehicleType)}`
                 : '/data/crashes-by-month';
             return await fetchData(url);
         }
