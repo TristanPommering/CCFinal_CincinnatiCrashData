@@ -13,11 +13,11 @@
             flex-direction: row;
         }
         #charts-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
+        
         canvas {
             width: 300px !important;
             height: 300px !important;
@@ -51,9 +51,53 @@
         #uploadForm button {
             margin: 5px 0;
         }
+        #filter-container {
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        #filterButton {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        
+        .dropdown-content label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        
+        .dropdown-content input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        
+        #filterDropdown.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <div id="filter-container">
+        <h3>Filter by Vehicle Type</h3>
+        <button id="filterButton">Select Vehicle Types</button>
+        <div id="filterDropdown" class="dropdown-content">
+            <!-- Checkboxes will be populated dynamically -->
+        </div>
+    </div>    
     <div id="charts-container">
         <h2>Crashes by Vehicle Type</h2>
         <canvas id="vehicleTypeChart"></canvas>
@@ -175,6 +219,77 @@
             });
         }
         
+        document.addEventListener('DOMContentLoaded', function () {
+            // List of all vehicle types (replace this with the actual list from your data)
+            const vehicleTypes = ["Passenger Vehicle", "Truck", "Motorcycle", "Bus", "Bicycle"];
+            
+            // Reference to the filter dropdown
+            const filterDropdown = document.getElementById('filterDropdown');
+            
+            // Populate the dropdown with checkboxes
+            vehicleTypes.forEach(type => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" class="vehicle-filter" value="${type}" checked> ${type}`;
+                filterDropdown.appendChild(label);
+            });
+        
+            // Toggle dropdown visibility
+            document.getElementById('filterButton').addEventListener('click', () => {
+                filterDropdown.classList.toggle('show');
+            });
+        
+            // Handle filtering
+            document.querySelectorAll('.vehicle-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', updatePieChart);
+            });
+        
+            let vehicleTypeChart; // Keep a reference to the chart
+            function updatePieChart() {
+                const selectedTypes = Array.from(document.querySelectorAll('.vehicle-filter:checked'))
+                    .map(checkbox => checkbox.value);
+
+                fetch('/get_filtered_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vehicleTypes: selectedTypes })
+                })
+                .then(response => response.json())
+                .then(filteredData => {
+                    const ctx = document.getElementById('vehicleTypeChart').getContext('2d');
+
+                    // Destroy existing chart instance if it exists
+                    if (vehicleTypeChart) {
+                        vehicleTypeChart.destroy();
+                    }
+
+                    // Create the new pie chart
+                    vehicleTypeChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: filteredData.labels,
+                            datasets: [{
+                                data: filteredData.data,
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                    '#9966FF', '#FF9F40', '#FF5733', '#33FF57',
+                                    '#33FFF5', '#F333FF', '#335FFF', '#F5FF33'
+                                ],
+                                hoverOffset: 10
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'top' },
+                                title: { display: true, text: 'Crashes by Vehicle Type' }
+                            }
+                        }
+                    });
+                });
+            }
+
+        });
+        
 
         // Create a bar chart
         function createBarChart(ctx, labels, data) {
@@ -288,6 +403,24 @@
             const ctx = document.getElementById('predictionChart').getContext('2d');
             createLineChart(ctx, years, crashes, 'Crashes (2022-2025 with Prediction for 2025)');
         }
+
+        async function populateVehicleTypeFilter() {
+            const vehicleTypeData = await fetchData('/data/vehicle-type');
+            const filterDropdown = document.getElementById('filterDropdown');
+        
+            filterDropdown.innerHTML = ''; // Clear existing items
+            vehicleTypeData.forEach(item => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" class="vehicle-filter" value="${item.label}" checked> ${item.label}`;
+                filterDropdown.appendChild(label);
+            });
+        
+            // Add event listeners for filtering
+            document.querySelectorAll('.vehicle-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', updatePieChart);
+            });
+        }
+        
 
         // Initialize all charts
         async function init() {

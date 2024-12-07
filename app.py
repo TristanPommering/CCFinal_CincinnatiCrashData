@@ -224,7 +224,6 @@ def process_data(df):
 
 # Endpoint for data loading
 @app.route("/upload", methods=["POST"])
-@app.route("/upload", methods=["POST"])
 def upload_data():
     columns_exist()  # Ensure required columns exist
     try:
@@ -262,6 +261,32 @@ def upload_data():
         app.logger.error(f"Unexpected error: {e}")
         return jsonify({"error": "An unexpected error occurred."}), 500
 
+@app.route("/get_filtered_data", methods=["POST"])
+def get_filtered_data():
+    try:
+        # Parse the incoming JSON request
+        request_data = request.get_json()
+        selected_vehicle_types = request_data.get("vehicleTypes", [])
+        
+        # Build a query to filter data
+        query = """
+            SELECT VEHICLETYPE, COUNT(*) AS CrashCount
+            FROM [dbo].[CrashData]
+            WHERE VEHICLETYPE IS NOT NULL
+            AND VEHICLETYPE IN :vehicle_types
+            GROUP BY VEHICLETYPE
+            ORDER BY CrashCount DESC;
+        """
+        
+        # Execute the query with filtered vehicle types
+        with engine.connect() as connection:
+            result = connection.execute(text(query), {"vehicle_types": tuple(selected_vehicle_types)})
+            data = [{"label": row[0], "value": int(row[1])} for row in result]
+        
+        return jsonify({"labels": [item["label"] for item in data], "data": [item["value"] for item in data]})
+    except Exception as e:
+        app.logger.error(f"Error fetching filtered data: {e}")
+        return jsonify({"error": "Failed to fetch filtered data."}), 500
 
 
 if __name__ == "__main__":
