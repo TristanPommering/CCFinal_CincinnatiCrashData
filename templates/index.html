@@ -70,6 +70,21 @@
         #bar-chart-container {
             margin-top: 20px;
         }
+        
+        .filter-and-chart {
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            gap: 10px;
+        }
+        
+        #vehicleTypeFilter {
+            margin: 0 auto;
+            padding: 5px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
         #vehicleTypeFilter {
             margin-bottom: 10px;
         }
@@ -141,7 +156,7 @@
             <p id="avgCrashesValue">Loading...</p>
         </div>
         <div id="common-vehicle" class="stat-box">
-            <h3>Common Vehicle</h3>
+            <h3>Most Common Vehicle</h3>
             <p id="commonVehicleValue">Loading...</p>
         </div>
         <div id="peak-month" class="stat-box">
@@ -163,10 +178,12 @@
     <div id="content-container">
         <div id="bar-chart-container">
             <h2>Crashes by Month</h2>
-            <select id="vehicleTypeFilter">
-                <option value="">All Vehicle Types</option>
-            </select>
-            <canvas id="crashesByMonthChart"></canvas>
+            <div class="filter-and-chart">
+                <select id="vehicleTypeFilter">
+                    <option value="">All Vehicle Types</option>
+                </select>
+                <canvas id="crashesByMonthChart"></canvas>
+            </div>
         </div>
 
         <div id="prediction-container">
