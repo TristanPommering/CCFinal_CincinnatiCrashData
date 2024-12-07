@@ -288,6 +288,54 @@ def get_filtered_data():
         app.logger.error(f"Error fetching filtered data: {e}")
         return jsonify({"error": "Failed to fetch filtered data."}), 500
 
+@app.route("/data/stats", methods=["GET"])
+def get_crash_statistics():
+    try:
+        with engine.connect() as connection:
+            # Total crashes
+            total_crashes_query = "SELECT COUNT(*) FROM [dbo].[CrashData];"
+            total_crashes = connection.execute(text(total_crashes_query)).scalar()
+            
+            # Average crashes per day
+            avg_crashes_query = """
+                SELECT AVG(CrashCount) FROM (
+                    SELECT CAST(CRASHDATE AS DATE) AS CrashDay, COUNT(*) AS CrashCount
+                    FROM [dbo].[CrashData]
+                    GROUP BY CAST(CRASHDATE AS DATE)
+                ) AS DailyCrashes;
+            """
+            avg_crashes = connection.execute(text(avg_crashes_query)).scalar()
+
+            # Most common vehicle type
+            common_vehicle_query = """
+                SELECT TOP 1 VEHICLETYPE, COUNT(*) AS CrashCount
+                FROM [dbo].[CrashData]
+                WHERE VEHICLETYPE IS NOT NULL
+                GROUP BY VEHICLETYPE
+                ORDER BY CrashCount DESC;
+            """
+            common_vehicle = connection.execute(text(common_vehicle_query)).fetchone()
+
+            # Peak crash month
+            peak_month_query = """
+                SELECT TOP 1 INTEGERMONTH, COUNT(*) AS CrashCount
+                FROM [dbo].[CrashData]
+                GROUP BY INTEGERMONTH
+                ORDER BY CrashCount DESC;
+            """
+            peak_month = connection.execute(text(peak_month_query)).fetchone()
+
+        stats = {
+            "total_crashes": total_crashes,
+            "avg_crashes_per_day": round(avg_crashes, 2),
+            "most_common_vehicle": common_vehicle[0] if common_vehicle else "Unknown",
+            "peak_month": peak_month[0] if peak_month else "Unknown"
+        }
+        return jsonify(stats)
+    except Exception as e:
+        app.logger.error(f"Error fetching statistics: {e}")
+        return jsonify({"error": "Failed to fetch statistics."}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
