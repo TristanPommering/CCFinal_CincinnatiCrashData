@@ -17,62 +17,49 @@
             right: 0;
             z-index: 1100;
         }
-        
+    
         #main-title h1 {
             font-size: 1.8em;
             font-weight: bold;
             color: #333;
             margin: 0;
         }
-        
-        #stats-container {
-            margin-top: 70px; /* Adjust for the height of the title */
-        }        
+    
         #stats-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
+            flex-direction: column; /* Arrange stat boxes vertically */
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
-            z-index: 1000;
-            padding: 10px 0;
-            border-bottom: 1px solid #ccc;
+            top: 70px; /* Space below the title */
+            right: 10px; /* Slight padding from the right edge */
+            gap: 20px; /* Space between each stat box */
+            z-index: 1000; /* Keep it above other elements */
         }
-        
-        body {
-            margin: 0;
-            padding-top: 70px;
-        }
-        
+    
         .stat-box {
             text-align: center;
             background: #f4f4f4;
             border: 1px solid #ccc;
             padding: 10px;
             border-radius: 8px;
-            width: 150px;
+            width: 180px; /* Slightly larger for better readability */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }        
+        }
+    
         .stat-box h3 {
             margin: 0;
             font-size: 1em;
             color: #333;
         }
-        
+    
         .stat-box p {
             font-size: 1.5em;
             font-weight: bold;
             color: #000;
         }
+    
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display: flex;
-            flex-direction: row;
+            margin: 0;
+            padding-top: 110px; /* Account for the title at the top */
         }
         #charts-container {
             display: grid;
@@ -193,7 +180,7 @@
             <h3>Peak Month</h3>
             <p id="peakMonthValue">Loading...</p>
         </div>
-    </div>
+    </div>    
     <div id="charts-container">
         <h2>Crashes by Vehicle Type</h2>
         <canvas id="vehicleTypeChart"></canvas>
