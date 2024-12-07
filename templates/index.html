@@ -6,6 +6,28 @@
     <title>Crash Data Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        #main-title {
+            text-align: center;
+            padding: 10px 0;
+            background-color: white;
+            border-bottom: 1px solid #ccc;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1100;
+        }
+        
+        #main-title h1 {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        
+        #stats-container {
+            margin-top: 70px; /* Adjust for the height of the title */
+        }        
         #stats-container {
             display: flex;
             justify-content: center;
@@ -69,25 +91,30 @@
         }
         #bar-chart-container {
             margin-top: 20px;
+            text-align: center;
         }
         
         .filter-and-chart {
             display: flex;
-            flex-direction: column;
-            align-items: center; 
-            gap: 10px;
+            justify-content: center; /* Center the dropdown and chart horizontally */
+            align-items: center; /* Align them vertically */
+            gap: 20px; /* Space between the dropdown and chart */
+        }
+        
+        #filter-container {
+            display: flex;
+            flex-direction: column; /* Keep dropdown in a vertical stack (if labels are added later) */
+            align-items: center;
         }
         
         #vehicleTypeFilter {
-            margin: 0 auto;
             padding: 5px;
             font-size: 1em;
             border: 1px solid #ccc;
             border-radius: 5px;
+            width: 200px;
         }
-        #vehicleTypeFilter {
-            margin-bottom: 10px;
-        }
+        
         #crashesByMonthChart {
             width: 800px !important;
             height: 600px !important;
@@ -146,6 +173,9 @@
     </style>
 </head>
 <body>
+    <header id="main-title">
+        <h1>Cincinnati Traffic Accident Analysis</h1>
+    </header>
     <div id="stats-container">
         <div id="total-crashes" class="stat-box">
             <h3>Total Crashes</h3>
@@ -179,12 +209,14 @@
         <div id="bar-chart-container">
             <h2>Crashes by Month</h2>
             <div class="filter-and-chart">
-                <select id="vehicleTypeFilter">
-                    <option value="">All Vehicle Types</option>
-                </select>
+                <div id="filter-container">
+                    <select id="vehicleTypeFilter">
+                        <option value="">All Vehicle Types</option>
+                    </select>
+                </div>
                 <canvas id="crashesByMonthChart"></canvas>
             </div>
-        </div>
+        </div>        
 
         <div id="prediction-container">
             <h2>Total Crashes: 2022-2025 (Prediction for 2025)</h2>
