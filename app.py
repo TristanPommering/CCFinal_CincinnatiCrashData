@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
