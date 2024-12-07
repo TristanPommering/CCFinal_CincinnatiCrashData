@@ -345,19 +345,19 @@ def predict_crash_severity():
         with engine.connect() as connection:
             query = """
                 SELECT 
-                    CRASHSEVERITYID, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
+                    CRASHSEVERITY, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
                 FROM [dbo].[CrashData]
-                WHERE CRASHSEVERITYID IS NOT NULL
-                  AND VEHICLETYPE IS NOT NULL
-                  AND LIGHTCONDITIONSPRIMARY IS NOT NULL
-                  AND ROADCONDITIONSPRIMARY IS NOT NULL;
+                WHERE CRASHSEVERITY IS NOT NULL
+                AND VEHICLETYPE IS NOT NULL
+                AND LIGHTCONDITIONSPRIMARY IS NOT NULL
+                AND ROADCONDITIONSPRIMARY IS NOT NULL;
             """
             result = connection.execute(text(query))
             data = pd.DataFrame(result.fetchall(), columns=result.keys())
 
         # Preprocess data
         features = ["VEHICLETYPE", "LIGHTCONDITIONSPRIMARY", "ROADCONDITIONSPRIMARY"]
-        target = "CRASHSEVERITYID"
+        target = "CRASHSEVERITY"
 
         # Encode categorical variables
         data = pd.get_dummies(data, columns=features)
