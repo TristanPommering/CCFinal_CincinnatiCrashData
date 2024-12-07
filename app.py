@@ -339,45 +339,36 @@ def get_crash_statistics():
         return jsonify({"error": "Failed to fetch statistics."}), 500
 
 @app.route("/data/predict-severity", methods=["POST"])
-@app.route("/data/predict-severity", methods=["POST"])
 def predict_crash_severity():
     try:
         # Query crash data
         with engine.connect() as connection:
             query = """
                 SELECT 
-                    CRASHSEVERITY, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
+                    CRASHSEVERITYID, CRASHSEVERITY, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
                 FROM [dbo].[CrashData]
-                WHERE CRASHSEVERITY IS NOT NULL
-                AND VEHICLETYPE IS NOT NULL
-                AND LIGHTCONDITIONSPRIMARY IS NOT NULL
-                AND ROADCONDITIONSPRIMARY IS NOT NULL;
+                WHERE CRASHSEVERITYID IS NOT NULL
+                  AND VEHICLETYPE IS NOT NULL
+                  AND LIGHTCONDITIONSPRIMARY IS NOT NULL
+                  AND ROADCONDITIONSPRIMARY IS NOT NULL;
             """
             result = connection.execute(text(query))
             data = pd.DataFrame(result.fetchall(), columns=result.keys())
-        
-        # Log fetched data
-        app.logger.info(f"Fetched data size: {data.shape}")
-        app.logger.info(f"Sample data: {data.head()}")
+
+        # Create a mapping between CRASHSEVERITYID and CRASHSEVERITY
+        severity_mapping = dict(zip(data["CRASHSEVERITYID"], data["CRASHSEVERITY"]))
 
         # Preprocess data
         features = ["VEHICLETYPE", "LIGHTCONDITIONSPRIMARY", "ROADCONDITIONSPRIMARY"]
-        target = "CRASHSEVERITY"
+        target = "CRASHSEVERITYID"
 
-        # Encode categorical target
-        from sklearn.preprocessing import LabelEncoder
-        label_encoder = LabelEncoder()
-        data[target] = label_encoder.fit_transform(data[target])
-        y = data[target]
-
-        # Encode features
+        # Encode categorical variables
         data = pd.get_dummies(data, columns=features)
         X = data.drop(columns=[target])
+        y = data[target]
 
         # Train-test split
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        if X_train.empty or y_train.empty:
-            raise ValueError("Insufficient data for training.")
 
         # Train the model
         model = RandomForestClassifier(random_state=42)
@@ -389,12 +380,12 @@ def predict_crash_severity():
         input_df = pd.get_dummies(input_df)
         input_df = input_df.reindex(columns=X.columns, fill_value=0)  # Align with training columns
 
-        # Log input data
-        app.logger.info(f"Input data columns: {input_df.columns}")
-
         # Predict severity probabilities
         probabilities = model.predict_proba(input_df)[0]
-        severity_labels = label_encoder.inverse_transform(model.classes_)
+        severity_ids = model.classes_
+
+        # Map numeric severity IDs to descriptive labels
+        severity_labels = [severity_mapping[int(severity_id)] for severity_id in severity_ids]
 
         # Format the result as a dictionary of probabilities
         result = {severity: round(prob * 100, 2) for severity, prob in zip(severity_labels, probabilities)}
@@ -405,7 +396,6 @@ def predict_crash_severity():
         app.logger.error(f"Error in severity prediction: {e}")
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "Failed to predict crash severity."}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
