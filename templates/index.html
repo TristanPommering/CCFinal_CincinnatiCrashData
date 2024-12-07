@@ -8,16 +8,19 @@
     <style>
         #stats-container {
             display: flex;
-            justify-content: space-around;
+            justify-content: center; /* Center align the stats boxes */
+            align-items: center;
+            gap: 20px; /* Add spacing between the boxes */
             margin-bottom: 20px;
         }
-        .stat-box {
+        .stat-box {    
             text-align: center;
             background: #f4f4f4;
             border: 1px solid #ccc;
             padding: 10px;
             border-radius: 8px;
-            width: 20%;
+            width: 150px; /* Set a fixed width for compact size */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         .stat-box h3 {
             margin: 0;
@@ -120,15 +123,15 @@
             <p id="totalCrashesValue">Loading...</p>
         </div>
         <div id="avg-crashes" class="stat-box">
-            <h3>Average Crashes Per Day</h3>
+            <h3>Avg Crashes/Day</h3>
             <p id="avgCrashesValue">Loading...</p>
         </div>
         <div id="common-vehicle" class="stat-box">
-            <h3>Most Common Vehicle</h3>
+            <h3>Common Vehicle</h3>
             <p id="commonVehicleValue">Loading...</p>
         </div>
         <div id="peak-month" class="stat-box">
-            <h3>Peak Crash Month</h3>
+            <h3>Peak Month</h3>
             <p id="peakMonthValue">Loading...</p>
         </div>
     </div>    
@@ -518,6 +521,7 @@
             );
 
             // Initialize the bar chart and prediction chart
+            await fetchAndDisplayStats();
             await initCrashesByMonthChart();
             await fetchPredictions();
         }
