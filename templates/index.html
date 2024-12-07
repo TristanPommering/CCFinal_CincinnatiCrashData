@@ -27,40 +27,36 @@
     
         #stats-container {
             display: flex;
-            flex-direction: column; /* Arrange stat boxes vertically */
-            position: fixed;
-            top: 70px; /* Space below the title */
-            right: 10px; /* Slight padding from the right edge */
-            gap: 20px; /* Space between each stat box */
-            z-index: 1000; /* Keep it above other elements */
+            flex-direction: column; 
+            position: static; 
+            float: right; 
+            margin-right: 10px;
+            gap: 20px; 
+            z-index: 1000; 
         }
-    
+        
         .stat-box {
             text-align: center;
             background: #f4f4f4;
             border: 1px solid #ccc;
             padding: 10px;
             border-radius: 8px;
-            width: 180px; /* Slightly larger for better readability */
+            width: 180px; 
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-    
+        
         .stat-box h3 {
             margin: 0;
             font-size: 1em;
             color: #333;
         }
-    
+        
         .stat-box p {
             font-size: 1.5em;
             font-weight: bold;
             color: #000;
         }
-    
-        body {
-            margin: 0;
-            padding-top: 110px; /* Account for the title at the top */
-        }
+        
         #charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
