@@ -345,7 +345,7 @@ def predict_crash_severity():
         with engine.connect() as connection:
             query = """
                 SELECT 
-                    CRASHSEVERITYID, CRASHSEVERITY, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
+                    CRASHSEVERITYID, VEHICLETYPE, LIGHTCONDITIONSPRIMARY, ROADCONDITIONSPRIMARY
                 FROM [dbo].[CrashData]
                 WHERE CRASHSEVERITYID IS NOT NULL
                   AND VEHICLETYPE IS NOT NULL
@@ -354,9 +354,6 @@ def predict_crash_severity():
             """
             result = connection.execute(text(query))
             data = pd.DataFrame(result.fetchall(), columns=result.keys())
-
-        # Create a mapping between CRASHSEVERITYID and CRASHSEVERITY
-        severity_mapping = dict(zip(data["CRASHSEVERITYID"], data["CRASHSEVERITY"]))
 
         # Preprocess data
         features = ["VEHICLETYPE", "LIGHTCONDITIONSPRIMARY", "ROADCONDITIONSPRIMARY"]
@@ -382,19 +379,14 @@ def predict_crash_severity():
 
         # Predict severity probabilities
         probabilities = model.predict_proba(input_df)[0]
-        severity_ids = model.classes_
-
-        # Map numeric severity IDs to descriptive labels
-        severity_labels = [severity_mapping[int(severity_id)] for severity_id in severity_ids]
+        severity_labels = model.classes_
 
         # Format the result as a dictionary of probabilities
-        result = {severity: round(prob * 100, 2) for severity, prob in zip(severity_labels, probabilities)}
+        result = {f"Severity {int(label)}": round(prob * 100, 2) for label, prob in zip(severity_labels, probabilities)}
 
         return jsonify(result)
     except Exception as e:
-        import traceback
         app.logger.error(f"Error in severity prediction: {e}")
-        app.logger.error(traceback.format_exc())
         return jsonify({"error": "Failed to predict crash severity."}), 500
 
 if __name__ == "__main__":
