@@ -1,10 +1,11 @@
 from flask import Flask, render_template, jsonify, request
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-import logging
-from sklearn.linear_model import LinearRegression
-import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 import pandas as pd
+import numpy as np
+import logging
 
 app = Flask(__name__)
 
@@ -335,6 +336,57 @@ def get_crash_statistics():
     except Exception as e:
         app.logger.error(f"Error fetching statistics: {e}")
         return jsonify({"error": "Failed to fetch statistics."}), 500
+    
+# Crash severity prediction endpoint
+@app.route("/data/predict-severity", methods=["POST"])
+def predict_crash_severity():
+    try:
+        # Query crash data
+        with engine.connect() as connection:
+            query = """
+                SELECT 
+                    CRASHSEVERITYID, INTEGERMONTH, VEHICLETYPE, LIGHTCONDITIONSPRIMARY,
+                    ROADCONDITIONSPRIMARY, WEATHER
+                FROM [dbo].[CrashData]
+                WHERE CRASHSEVERITYID IS NOT NULL;
+            """
+            result = connection.execute(text(query))
+            data = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+        # Preprocess data
+        features = ['INTEGERMONTH', 'VEHICLETYPE', 'LIGHTCONDITIONSPRIMARY', 
+                    'ROADCONDITIONSPRIMARY', 'WEATHER']
+        target = 'CRASHSEVERITYID'
+
+        # Encode categorical variables
+        data = pd.get_dummies(data, columns=features, drop_first=True)
+        
+        X = data.drop(columns=[target])
+        y = data[target]
+
+        # Train-test split
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Train the model
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X_train, y_train)
+
+        # Process input data from request
+        input_data = request.get_json()
+        input_df = pd.DataFrame([input_data])
+        input_df = pd.get_dummies(input_df)
+        input_df = input_df.reindex(columns=X.columns, fill_value=0)
+
+        # Predict severity
+        predicted_severity = int(model.predict(input_df)[0])
+
+        return jsonify({
+            "predicted_severity": predicted_severity,
+            "message": "Severity prediction completed successfully."
+        })
+    except Exception as e:
+        app.logger.error(f"Error in severity prediction: {e}")
+        return jsonify({"error": "Failed to predict crash severity."}), 500
 
 
 if __name__ == "__main__":

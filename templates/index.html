@@ -236,9 +236,101 @@
                 <button type="button" onclick="uploadFile()">Upload</button>
             </form>
         </div>
+
+        <div id="severity-prediction-container">
+            <h2>Predict Crash Severity</h2>
+            <form id="severityForm">
+                <label for="integerMonth">Month (1-12):</label>
+                <input type="number" id="integerMonth" name="INTEGERMONTH" min="1" max="12" required><br><br>
+        
+                <label for="vehicleType">Vehicle Type:</label>
+                <select id="vehicleType" name="VEHICLETYPE">
+                    <option value="Passenger Vehicle">Passenger Vehicle</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Truck">Truck</option>
+                    <option value="Motorcycle">Motorcycle</option>
+                    <option value="Bicycle">Bicycle</option>
+                </select><br><br>
+        
+                <label for="lightCondition">Light Condition:</label>
+                <select id="lightCondition" name="LIGHTCONDITIONSPRIMARY">
+                    <option value="1 - DAYLIGHT">Daylight</option>
+                    <option value="2 - DUSK">Dusk</option>
+                    <option value="3 - DARK">Dark</option>
+                </select><br><br>
+        
+                <label for="roadCondition">Road Condition:</label>
+                <select id="roadCondition" name="ROADCONDITIONSPRIMARY">
+                    <option value="01 - DRY">Dry</option>
+                    <option value="02 - WET">Wet</option>
+                    <option value="03 - SNOW">Snow</option>
+                </select><br><br>
+        
+                <label for="weather">Weather:</label>
+                <select id="weather" name="WEATHER">
+                    <option value="1 - CLEAR">Clear</option>
+                    <option value="2 - RAIN">Rain</option>
+                    <option value="3 - SNOW">Snow</option>
+                </select><br><br>
+        
+                <button type="button" onclick="submitSeverityForm()">Predict</button>
+            </form>
+        
+            <h3 id="severityResult">Predicted Severity: N/A</h3>
+            <canvas id="severityChart"></canvas>
+        </div>        
     </div>
 
     <script>
+        async function submitSeverityForm() {
+            const formData = {
+                INTEGERMONTH: document.getElementById("integerMonth").value,
+                VEHICLETYPE: document.getElementById("vehicleType").value,
+                LIGHTCONDITIONSPRIMARY: document.getElementById("lightCondition").value,
+                ROADCONDITIONSPRIMARY: document.getElementById("roadCondition").value,
+                WEATHER: document.getElementById("weather").value
+            };
+        
+            try {
+                const response = await fetch('/data/predict-severity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+        
+                const result = await response.json();
+                if (result.error) {
+                    alert("Error: " + result.error);
+                    return;
+                }
+        
+                // Display result
+                document.getElementById("severityResult").textContent = `Predicted Severity: ${result.predicted_severity}`;
+        
+                // Update chart
+                const ctx = document.getElementById("severityChart").getContext("2d");
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ["No Injury", "Minor Injury", "Serious Injury", "Fatal", "Property Damage Only"],
+                        datasets: [{
+                            label: "Severity Prediction",
+                            data: [0, 0, 0, 0, 1], // Mock data; customize as needed
+                            backgroundColor: ["#4CAF50", "#FFEB3B", "#FF9800", "#F44336", "#9E9E9E"]
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            title: { display: true, text: "Predicted Crash Severity" }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error predicting severity:", error);
+                alert("An error occurred while predicting crash severity.");
+            }
+        }
+        
         // Helper function to fetch data
         async function fetchData(url) {
             try {
